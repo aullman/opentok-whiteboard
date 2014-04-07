@@ -144,7 +144,9 @@ var OpenTokWhiteboard = angular.module('opentok-whiteboard', ['opentok'])
                     // Wait a second to make sure we got all of the updates
                     // (sometimes they come out of order)
                     setTimeout(function () {
-                        drawUpdates(drawHistoryReceived);
+                        if (drawHistoryReceived) {
+                            drawUpdates(drawHistoryReceived);
+                        }
                     }, 1000);
                 },
                 connectionCreated: function (event) {

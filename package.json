@@ -1,0 +1,32 @@
+{
+  "name": "opentok-whiteboard",
+  "version": "0.0.2",
+  "description": "Shared Whiteboard that works with OpenTok",
+  "main": "opentok-whiteboard.js",
+  "dependencies": {
+    "gulp": "~3.6.0"
+  },
+  "devDependencies": {
+    "gulp-rename": "~1.2.0",
+    "gulp-uglify": "~0.2.1",
+    "gulp": "~3.6.0",
+    "gulp-jshint": "~1.5.3"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/aullman/opentok-whiteboard.git"
+  },
+  "keywords": [
+    "opentok",
+    "whiteboard"
+  ],
+  "author": "Adam Ullman <adam@tokbox.com>",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/aullman/opentok-whiteboard/issues"
+  },
+  "homepage": "https://github.com/aullman/opentok-whiteboard"
+}
