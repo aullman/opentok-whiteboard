@@ -13,9 +13,11 @@ var OpenTokWhiteboard = angular.module('opentok-whiteboard', ['opentok'])
     return {
         restrict: 'E',
         template: '<canvas></canvas>' + 
-            '<input type="button" ng-click="clear()" value="Clear"></input>' +
-            '<select name="color" ng-model="color" ng-options="c for c in colors">' +
-            '</select>',
+            '<div class="OT_panel">' +
+            '<input type="button" ng-class="{OT_color: true, OT_selected: c[\'background-color\'] === color}" ' +
+            'ng-repeat="c in colors" ng-style="c" ng-click="changeColor(c)">' +
+            '</input>' +
+            '<input type="button" ng-click="clear()" class="OT_clear" value="Clear"></input>',
         link: function (scope, element, attrs) {
             var canvas = element.context.querySelector("canvas"),
                 select = element.context.querySelector("select"),
@@ -28,36 +30,17 @@ var OpenTokWhiteboard = angular.module('opentok-whiteboard', ['opentok'])
                 lineWidth = 2,
                 batchUpdates = [];
 
-            scope.colors = ['black', 'blue', 'red', 'green', 'orange', 'purple', 'brown'];
-            scope.color = scope.colors[Math.floor(Math.random() * scope.colors.length)];
-            
-            scope.colors.forEach(function (color) {
-                var option = document.createElement('option');
-                option.value = color;
-                option.innerHTML = color;
-                select.appendChild(option);
-            });
+            scope.colors = [{'background-color': 'black'},
+                            {'background-color': 'blue'},
+                            {'background-color': 'red'},
+                            {'background-color': 'green'},
+                            {'background-color': 'orange'},
+                            {'background-color': 'purple'},
+                            {'background-color': 'brown'}];
+            scope.color = scope.colors[Math.floor(Math.random() * scope.colors.length)]['background-color'];
 
             canvas.width = attrs.width || element.width();
             canvas.height = attrs.height || element.height();
-            angular.element(canvas).css({
-                width: '100%',
-                height: '100%',
-                position: 'absolute',
-                top: 0,
-                left: 0
-            });
-            angular.element(select).css({
-                position: 'absolute',
-                top: 0,
-                right: 0,
-                height: "20px"
-            });
-            angular.element(input).css({
-                position: 'absolute',
-                top: "20px",
-                right: 0
-            });
             
             var clearCanvas = function () {
                 ctx.save();
@@ -69,6 +52,10 @@ var OpenTokWhiteboard = angular.module('opentok-whiteboard', ['opentok'])
                 // Restore the transform
                 ctx.restore();
                 drawHistory = [];
+            };
+            
+            scope.changeColor = function (color) {
+                scope.color = color['background-color'];
             };
             
             scope.clear = function () {
