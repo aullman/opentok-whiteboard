@@ -9,30 +9,35 @@
 **/
 
 var OpenTokWhiteboard = angular.module('opentok-whiteboard', ['opentok'])
-.directive('otWhiteboard', ['OTSession', function (OTSession) {
+.directive('otWhiteboard', ['OTSession', '$window', function (OTSession, $window) {
     return {
         restrict: 'E',
-        scope: {
-            color: '=',
-            lineWidth: "&"
-        },
         template: '<canvas></canvas>' + 
             '<input type="button" ng-click="clear()" value="Clear"></input>' +
-            '<select name="color" ng-model="color">' +
-            '<option value="black">black</option>' +
-            '<option value="blue">blue</option>' +
-            '<option value="red">red</option>' +
-            '<option value="green">green</option>' +
+            '<select name="color" ng-model="color" ng-options="c for c in colors">' +
             '</select>',
         link: function (scope, element, attrs) {
             var canvas = element.context.querySelector("canvas"),
-                ctxs = {},
+                select = element.context.querySelector("select"),
+                input = element.context.querySelector("input"),
+                clients = {},
+                thisClient = {dragging:false},
                 ctx,
-                dragging = false,
                 drawHistory = [],
                 drawHistoryReceivedFrom,
                 drawHistoryReceived,
+                lineWidth = 2,
                 batchUpdates = [];
+
+            scope.colors = ['black', 'blue', 'red', 'green', 'orange', 'purple', 'brown'];
+            scope.color = scope.colors[Math.floor(Math.random() * scope.colors.length)];
+            
+            scope.colors.forEach(function (color) {
+                var option = document.createElement('option');
+                option.value = color;
+                option.innerHTML = color;
+                select.appendChild(option);
+            });
 
             canvas.width = attrs.width || element.width();
             canvas.height = attrs.height || element.height();
@@ -43,13 +48,13 @@ var OpenTokWhiteboard = angular.module('opentok-whiteboard', ['opentok'])
                 top: 0,
                 left: 0
             });
-            angular.element(element.context.querySelector("select")).css({
+            angular.element(select).css({
                 position: 'absolute',
                 top: 0,
                 right: 0,
                 height: "20px"
             });
-            angular.element(element.context.querySelector("input")).css({
+            angular.element(input).css({
                 position: 'absolute',
                 top: "20px",
                 right: 0
@@ -83,37 +88,47 @@ var OpenTokWhiteboard = angular.module('opentok-whiteboard', ['opentok'])
             };
 
             var draw = function (update) {
-                if (!ctxs.hasOwnProperty(update.id)) {
+                if (!ctx) {
                     ctx = canvas.getContext("2d");
                     ctx.lineCap = "round";
                     ctx.fillStyle = "solid";
-                    ctxs[update.id] = ctx;
-                } else {
-                    ctx = ctxs[update.id];
                 }
+                if (!clients.hasOwnProperty(update.id)) {
+                    if (OTSession.session && OTSession.session.connection &&
+                            OTSession.session.connection.connectionId === update.id) {
+                        clients[update.id] = thisClient;
+                    } else {
+                        clients[update.id] = {dragging: false};
+                    }
+                }
+                client = clients[update.id];
+
                 ctx.strokeStyle = update.color;
                 ctx.lineWidth = update.lineWidth;
                 
                 switch (update.type) {
                 case 'mousedown':
                 case 'touchstart':
-                    dragging = true;
-                    ctx.beginPath();
-                    ctx.moveTo(update.x, update.y);
+                    client.dragging = true;
                     break;
                 case 'mousemove':
                 case 'touchmove':
-                    if (dragging) {
+                    if (client.dragging) {
+                        ctx.beginPath();
+                        ctx.moveTo(client.lastX, client.lastY);
                         ctx.lineTo(update.x, update.y);
                         ctx.stroke();
+                        ctx.closePath();
                     }
                     break;
                 case 'mouseup':
                 case 'touchend':
                 case 'mouseout':
-                    dragging = false;
-                    ctx.closePath();
+                case 'blur':
+                    client.dragging = false;
                 }
+                client.lastX = update.x;
+                client.lastY = update.y;
                 drawHistory.push(update);
             };
             
@@ -136,7 +151,7 @@ var OpenTokWhiteboard = angular.module('opentok-whiteboard', ['opentok'])
             
             angular.element(canvas).on('mousedown mousemove mouseup mouseout touchstart touchmove touchend', function (event) {
                 event.preventDefault();
-                if (event.type === 'mousemove' && !dragging) {
+                if (event.type === 'mousemove' && !thisClient.dragging) {
                     // Ignore mouse move Events if we're not dragging
                     return;
                 }
@@ -156,7 +171,7 @@ var OpenTokWhiteboard = angular.module('opentok-whiteboard', ['opentok'])
                         y: y,
                         type: type,
                         color: scope.color,
-                        lineWidth: scope.lineWidth()
+                        lineWidth: lineWidth
                     };
                     draw(update);
                     sendUpdate(update);
