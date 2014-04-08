@@ -3,7 +3,8 @@
     <head>
         <meta http-equiv="Content-type" content="text/html; charset=utf-8">
         <title>OpenTok Whiteboard Demo</title>
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, maximum-scale=1">
+        <meta name="apple-mobile-web-app-capable" content="yes" />
         <script src="bower_components/jquery/dist/jquery.min.js" type="text/javascript" charset="utf-8"></script>
         <script src="bower_components/angular/angular.min.js" type="text/javascript" charset="utf-8"></script>
         <script src="//static.opentok.com/webrtc/v2.2/js/TB.js" type="text/javascript" charset="utf-8"></script>
@@ -13,8 +14,11 @@
         angular.module('demo', ['opentok', 'opentok-whiteboard'])
         .controller('DemoCtrl', ['$scope', 'OTSession', function ($scope, OTSession) {
             $scope.connected = false;
+            TB.checkSystemRequirements = function () {
+                return true;
+            };
             if (TB.checkSystemRequirements()) {
-                OTSession.init('YOUR_APIKEY', 'YOUR_SESSION_ID', 'YOUR_TOKEN', function (err) {
+                OTSession.init('YOUR_API_KEY', 'YOUR_SESSION_ID', 'YOUR_TOKEN', function (err) {
                     if (!err) {
                         $scope.$apply(function () {
                             $scope.connected = true;
