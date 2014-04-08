@@ -3,6 +3,7 @@
     <head>
         <meta http-equiv="Content-type" content="text/html; charset=utf-8">
         <title>OpenTok Whiteboard Demo</title>
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <script src="bower_components/jquery/dist/jquery.min.js" type="text/javascript" charset="utf-8"></script>
         <script src="bower_components/angular/angular.min.js" type="text/javascript" charset="utf-8"></script>
         <script src="//static.opentok.com/webrtc/v2.2/js/TB.js" type="text/javascript" charset="utf-8"></script>
@@ -12,28 +13,35 @@
         angular.module('demo', ['opentok', 'opentok-whiteboard'])
         .controller('DemoCtrl', ['$scope', 'OTSession', function ($scope, OTSession) {
             $scope.connected = false;
-            OTSession.init('YOUR_API_KEY', 'YOUR_SESSION_ID', 'YOUR_TOKEN', function (err) {
-                if (!err) {
-                    $scope.$apply(function () {
-                        $scope.connected = true;
-                    });
-                }
-            });
+            if (TB.checkSystemRequirements()) {
+                OTSession.init('YOUR_APIKEY', 'YOUR_SESSION_ID', 'YOUR_TOKEN', function (err) {
+                    if (!err) {
+                        $scope.$apply(function () {
+                            $scope.connected = true;
+                        });
+                    }
+                });
+            }
         }]);
         </script>
         <style type="text/css" media="screen">
+            body {
+                margin: 0;
+                padding: 0;
+            }
+            
             ot-whiteboard {
                 display: block;
-                width: 320px;
-                height: 240px;
+                width: 100%;
+                height: 100%;
                 background-color: #ccc;
                 position: absolute;
-                left: 100px;
-                right: 200px;
+                left: 0;
+                right: 0;
             }
         </style>
     </head>
     <body ng-controller="DemoCtrl">
-        <ot-whiteboard color="black" lineWidth="5" width="640" height="480" ng-if="connected"></ot-whiteboard>
+        <ot-whiteboard color="black" lineWidth="5" width="1280" height="960"></ot-whiteboard>
     </body>
 </html>
