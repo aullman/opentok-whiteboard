@@ -13,11 +13,18 @@ var OpenTokWhiteboard = angular.module('opentok-whiteboard', ['opentok'])
     return {
         restrict: 'E',
         template: '<canvas></canvas>' + 
+
             '<div class="OT_panel">' +
+
             '<input type="button" ng-class="{OT_color: true, OT_selected: c[\'background-color\'] === color}" ' +
             'ng-repeat="c in colors" ng-style="c" ng-click="changeColor(c)">' +
             '</input>' +
+
+            '<input type="button" ng-click="erase()" ng-class="{OT_erase: true, OT_selected: erasing}"' +
+            ' value="Eraser"></input>' +
+
             '<input type="button" ng-click="clear()" class="OT_clear" value="Clear"></input>',
+
         link: function (scope, element, attrs) {
             var canvas = element.context.querySelector("canvas"),
                 select = element.context.querySelector("select"),
@@ -27,7 +34,6 @@ var OpenTokWhiteboard = angular.module('opentok-whiteboard', ['opentok'])
                 drawHistory = [],
                 drawHistoryReceivedFrom,
                 drawHistoryReceived,
-                lineWidth = 2,
                 batchUpdates = [];
 
             scope.colors = [{'background-color': 'black'},
@@ -37,7 +43,6 @@ var OpenTokWhiteboard = angular.module('opentok-whiteboard', ['opentok'])
                             {'background-color': 'orange'},
                             {'background-color': 'purple'},
                             {'background-color': 'brown'}];
-            scope.color = scope.colors[Math.floor(Math.random() * scope.colors.length)]['background-color'];
 
             canvas.width = attrs.width || element.width();
             canvas.height = attrs.height || element.height();
@@ -56,7 +61,11 @@ var OpenTokWhiteboard = angular.module('opentok-whiteboard', ['opentok'])
             
             scope.changeColor = function (color) {
                 scope.color = color['background-color'];
+                scope.lineWidth = 2;
+                scope.erasing = false;
             };
+            
+            scope.changeColor(scope.colors[Math.floor(Math.random() * scope.colors.length)]);
             
             scope.clear = function () {
                 clearCanvas();
@@ -65,6 +74,12 @@ var OpenTokWhiteboard = angular.module('opentok-whiteboard', ['opentok'])
                         type: 'otWhiteboard_clear'
                     });
                 }
+            };
+            
+            scope.erase = function () {
+                scope.color = element.css("background-color") || "#fff";
+                scope.lineWidth = 50;
+                scope.erasing = true;
             };
 
             var draw = function (update) {
@@ -155,7 +170,7 @@ var OpenTokWhiteboard = angular.module('opentok-whiteboard', ['opentok'])
                             toX: x,
                             toY: y,
                             color: scope.color,
-                            lineWidth: lineWidth
+                            lineWidth: scope.lineWidth
                         };
                         draw(update);
                         client.lastX = x;
