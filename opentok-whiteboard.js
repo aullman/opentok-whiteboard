@@ -108,11 +108,10 @@ var OpenTokWhiteboard = angular.module('opentok-whiteboard', ['opentok'])
             
             var batchSignal = function (type, data, toConnection) {
                 // We send data in small chunks so that they fit in a signal
-                for (var i = 0; i < data.length; i++) {
-                    var dataChunk = [];
-                    for (; i < data.length && JSON.stringify(dataChunk).length < 5000; i++) {
-                        dataChunk.push(data[i]);
-                    }
+                // Each packet is maximum 175 chars, we can fit 8192/175 ~= 46 updates per signal
+                var dataCopy = data.slice();
+                while(dataCopy.length) {
+                    var dataChunk = dataCopy.splice(0, Math.min(dataCopy.length, 46));
                     var signal = {
                         type: type,
                         data: JSON.stringify(dataChunk)
