@@ -22,6 +22,8 @@ var OpenTokWhiteboard = angular.module('opentok-whiteboard', ['opentok'])
 
             '<input type="button" ng-click="erase()" ng-class="{OT_erase: true, OT_selected: erasing}"' +
             ' value="Eraser"></input>' +
+            
+            '<input type="button" ng-click="capture()" class="OT_capture" value="Capture"></input>' +
 
             '<input type="button" ng-click="clear()" class="OT_clear" value="Clear"></input>',
 
@@ -80,6 +82,10 @@ var OpenTokWhiteboard = angular.module('opentok-whiteboard', ['opentok'])
                 scope.color = element.css("background-color") || "#fff";
                 scope.lineWidth = 50;
                 scope.erasing = true;
+            };
+            
+            scope.capture = function () {
+                window.open(canvas.toDataURL('image/png'));
             };
 
             var draw = function (update) {

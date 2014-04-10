@@ -21,9 +21,11 @@ ot-whiteboard div.OT_panel input {
     border: none;
     outline: none;
     margin-top: 2px;
+    font-size: 9px;
 }
 
-ot-whiteboard div.OT_panel input.OT_clear {
+ot-whiteboard div.OT_panel input.OT_clear,
+ot-whiteboard div.OT_panel input.OT_capture {
     width: 40px;
     height: 40px;
     color: #fff;
