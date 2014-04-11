@@ -157,8 +157,10 @@ var OpenTokWhiteboard = angular.module('opentok-whiteboard', ['opentok'])
                 var offset = angular.element(canvas).offset(),
                     scaleX = canvas.width / element.width(),
                     scaleY = canvas.height / element.height(),
-                    offsetX = event.offsetX || event.originalEvent.pageX - offset.left,
-                    offsetY = event.offsetY || event.originalEvent.pageY - offset.top,
+                    offsetX = event.offsetX || event.originalEvent.pageX - offset.left ||
+                       event.originalEvent.touches[0].pageX - offset.left,
+                    offsetY = event.offsetY || event.originalEvent.pageY - offset.top ||
+                       event.originalEvent.touches[0].pageY - offset.top,
                     x = offsetX * scaleX,
                     y = offsetY * scaleY;
                 
