@@ -23,7 +23,7 @@ var OpenTokWhiteboard = angular.module('opentok-whiteboard', ['opentok'])
             '<input type="button" ng-click="erase()" ng-class="{OT_erase: true, OT_selected: erasing}"' +
             ' value="Eraser"></input>' +
             
-            '<input type="button" ng-click="capture()" class="OT_capture" value="Capture"></input>' +
+            '<input type="button" ng-click="capture()" class="OT_capture" value="{{captureText}}"></input>' +
 
             '<input type="button" ng-click="clear()" class="OT_clear" value="Clear"></input>',
 
@@ -36,7 +36,8 @@ var OpenTokWhiteboard = angular.module('opentok-whiteboard', ['opentok'])
                 drawHistory = [],
                 drawHistoryReceivedFrom,
                 drawHistoryReceived,
-                batchUpdates = [];
+                batchUpdates = [],
+                iOS = /(iPad|iPhone|iPod)/g.test( navigator.userAgent );
 
             scope.colors = [{'background-color': 'black'},
                             {'background-color': 'blue'},
@@ -45,6 +46,7 @@ var OpenTokWhiteboard = angular.module('opentok-whiteboard', ['opentok'])
                             {'background-color': 'orange'},
                             {'background-color': 'purple'},
                             {'background-color': 'brown'}];
+            scope.captureText = iOS ? 'Email' : 'Capture';
 
             canvas.width = attrs.width || element.width();
             canvas.height = attrs.height || element.height();
@@ -85,7 +87,13 @@ var OpenTokWhiteboard = angular.module('opentok-whiteboard', ['opentok'])
             };
             
             scope.capture = function () {
-                window.open(canvas.toDataURL('image/png'));
+                if (iOS) {
+                    // On iOS you can put HTML in a mailto: link
+                    window.location.href = "mailto:?subject=Whiteboard&Body=<img src='" + canvas.toDataURL('image/png') + "'>";
+                } else {
+                    // We just open the image in a new window
+                    window.open(canvas.toDataURL('image/png'));
+                }
             };
 
             var draw = function (update) {
