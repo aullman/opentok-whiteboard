@@ -210,6 +210,7 @@ var OpenTokWhiteboard = angular.module('opentok-whiteboard', ['opentok'])
                     'signal:otWhiteboard_update': function (event) {
                         if (event.from.connectionId !== OTSession.session.connection.connectionId) {
                             drawUpdates(JSON.parse(event.data));
+                            scope.$emit('otWhiteboardUpdate');
                         }
                     },
                     'signal:otWhiteboard_history': function (event) {
@@ -218,6 +219,7 @@ var OpenTokWhiteboard = angular.module('opentok-whiteboard', ['opentok'])
                         if (!drawHistoryReceivedFrom || drawHistoryReceivedFrom === event.from.connectionId) {
                             drawHistoryReceivedFrom = event.from.connectionId;
                             drawUpdates(JSON.parse(event.data));
+                            scope.$emit('otWhiteboardUpdate');
                         }
                     },
                     'signal:otWhiteboard_clear': function (event) {
