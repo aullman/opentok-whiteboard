@@ -1,7 +1,12 @@
 opentok-whiteboard
 ==================
 
-Shared Whiteboard that works with OpenTok
+Shared Whiteboard that works with OpenTok.
+
+Demo
+----
+
+Check out a [demo of it working on meet.tokbox.com](https://meet.tokbox.com/opentok-whiteboard/whiteboard). 
 
 Installation
 -----
