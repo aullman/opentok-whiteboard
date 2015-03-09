@@ -1,7 +1,7 @@
 opentok-whiteboard
 ==================
 
-Shared Whiteboard that works with OpenTok. It is intended to be used with the [opentok-angular](/aullman/opentok-angular) module.
+Shared Whiteboard that works with OpenTok. It is intended to be used with the [opentok-angular](https://github.com/aullman/opentok-angular) module.
 
 Demo
 ----
