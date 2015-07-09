@@ -25,7 +25,9 @@ ot-whiteboard div.OT_panel input {
 }
 
 ot-whiteboard div.OT_panel input.OT_clear,
-ot-whiteboard div.OT_panel input.OT_capture {
+ot-whiteboard div.OT_panel input.OT_capture,
+ot-whiteboard div.OT_panel input.OT_undo,
+ot-whiteboard div.OT_panel input.OT_redo {
     width: 40px;
     height: 40px;
     color: #fff;
