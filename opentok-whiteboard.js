@@ -37,10 +37,10 @@ var OpenTokWhiteboard = angular.module('opentok-whiteboard', ['opentok'])
                         dragging: false
                     },
                     ctx,
-                    start = 0,
-                    count = 0,
-                    undoStack = [],
-                    redoStack = [],
+                    start = 0, //Grabs the end position of each stroke
+                    count = 0, //Grabs the total count of each continuous stroke
+                    undoStack = [], //Stores the value of start and count for each continuous stroke
+                    redoStack = [], //When undo pops, data is sent to redoStack
                     drawHistory = [],
                     drawHistoryReceivedFrom,
                     drawHistoryReceived,
@@ -100,6 +100,7 @@ var OpenTokWhiteboard = angular.module('opentok-whiteboard', ['opentok'])
 
                 scope.changeColor(scope.colors[Math.floor(Math.random() * scope.colors.length)]);
 
+                /* Asks for confirmation on clearing whiteboard */
                 scope.clear = function () {
                     var msg = "Want to Clear Whiteboard?";
                     if ($window.confirm(msg)) {
@@ -128,6 +129,7 @@ var OpenTokWhiteboard = angular.module('opentok-whiteboard', ['opentok'])
                         window.open(canvas.toDataURL('image/png'));
                     }
                 };
+
 
                 scope.undo = function () {
                     if (!undoStack.length)
