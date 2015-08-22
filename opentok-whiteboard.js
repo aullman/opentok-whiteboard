@@ -81,7 +81,7 @@ var OpenTokWhiteboard = angular.module('opentok-whiteboard', ['opentok'])
             };
             
             scope.erase = function () {
-                scope.color = element.css("background-color") || "#fff";
+                //scope.color = element.css("background-color") || "#fff";
                 scope.lineWidth = 50;
                 scope.erasing = true;
             };
@@ -102,14 +102,23 @@ var OpenTokWhiteboard = angular.module('opentok-whiteboard', ['opentok'])
                     ctx.lineCap = "round";
                     ctx.fillStyle = "solid";
                 }
-
-                ctx.strokeStyle = update.color;
-                ctx.lineWidth = update.lineWidth;
-                ctx.beginPath();
-                ctx.moveTo(update.fromX, update.fromY);
-                ctx.lineTo(update.toX, update.toY);
-                ctx.stroke();
-                ctx.closePath();
+                if(update.mode=="pen"){
+                    ctx.globalCompositeOperation = "source-over";
+                    ctx.strokeStyle = update.color;
+                    ctx.lineWidth = update.lineWidth;
+                    ctx.beginPath();
+                    ctx.moveTo(update.fromX, update.fromY);
+                    ctx.lineTo(update.toX, update.toY);
+                    ctx.stroke();
+                    ctx.closePath();
+                } else {
+                    ctx.globalCompositeOperation = "destination-out";
+                    ctx.lineWidth = update.lineWidth;
+                    ctx.beginPath();
+                    ctx.moveTo(update.fromX, update.fromY);
+                    ctx.lineTo(update.toX, update.toY);
+                    ctx.stroke();
+                }
                 
                 drawHistory.push(update);
             };
@@ -188,6 +197,7 @@ var OpenTokWhiteboard = angular.module('opentok-whiteboard', ['opentok'])
                         event.originalEvent.touches[0].pageY - offset.top,
                     x = offsetX * scaleX,
                     y = offsetY * scaleY;
+                    var mode = scope.erasing ? "eraser" : "pen";
                     if (client.dragging) {
                         var update = {
                             id: OTSession.session && OTSession.session.connection &&
@@ -196,6 +206,7 @@ var OpenTokWhiteboard = angular.module('opentok-whiteboard', ['opentok'])
                             fromY: client.lastY,
                             toX: x,
                             toY: y,
+                            mode: mode,
                             color: scope.color,
                             lineWidth: scope.lineWidth
                         };
