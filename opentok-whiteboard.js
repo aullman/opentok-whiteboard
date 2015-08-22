@@ -164,23 +164,30 @@ var OpenTokWhiteboard = angular.module('opentok-whiteboard', ['opentok'])
                 
                 var offset = angular.element(canvas).offset(),
                     scaleX = canvas.width / element.width(),
-                    scaleY = canvas.height / element.height(),
-                    offsetX = event.offsetX || event.originalEvent.pageX - offset.left ||
-                       event.originalEvent.touches[0].pageX - offset.left,
-                    offsetY = event.offsetY || event.originalEvent.pageY - offset.top ||
-                       event.originalEvent.touches[0].pageY - offset.top,
-                    x = offsetX * scaleX,
-                    y = offsetY * scaleY;
+                    scaleY = canvas.height / element.height();
+                var offsetX, offsetY, x, y;
                 
                 switch (event.type) {
                 case 'mousedown':
                 case 'touchstart':
+                    offsetX = event.offsetX || event.originalEvent.pageX - offset.left ||
+                        event.originalEvent.touches[0].pageX - offset.left,
+                    offsetY = event.offsetY || event.originalEvent.pageY - offset.top ||
+                        event.originalEvent.touches[0].pageY - offset.top,
+                    x = offsetX * scaleX,
+                    y = offsetY * scaleY;
                     client.dragging = true;
                     client.lastX = x;
                     client.lastY = y;
                     break;
                 case 'mousemove':
                 case 'touchmove':
+                    offsetX = event.offsetX || event.originalEvent.pageX - offset.left ||
+                        event.originalEvent.touches[0].pageX - offset.left,
+                    offsetY = event.offsetY || event.originalEvent.pageY - offset.top ||
+                        event.originalEvent.touches[0].pageY - offset.top,
+                    x = offsetX * scaleX,
+                    y = offsetY * scaleY;
                     if (client.dragging) {
                         var update = {
                             id: OTSession.session && OTSession.session.connection &&
@@ -198,6 +205,7 @@ var OpenTokWhiteboard = angular.module('opentok-whiteboard', ['opentok'])
                         sendUpdate(update);
                     }
                     break;
+                case 'touchcancel':
                 case 'mouseup':
                 case 'touchend':
                 case 'mouseout':
