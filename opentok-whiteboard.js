@@ -38,6 +38,10 @@ var OpenTokWhiteboard = angular.module('opentok-whiteboard', ['opentok'])
                 drawHistoryReceived,
                 batchUpdates = [],
                 iOS = /(iPad|iPhone|iPod)/g.test( navigator.userAgent );
+                
+
+            // Create an empty project and a view for the canvas:
+            paper.setup(canvas);
 
             scope.colors = [{'background-color': 'black'},
                             {'background-color': 'blue'},
@@ -47,6 +51,9 @@ var OpenTokWhiteboard = angular.module('opentok-whiteboard', ['opentok'])
                             {'background-color': 'purple'},
                             {'background-color': 'brown'}];
             scope.captureText = iOS ? 'Email' : 'Capture';
+            
+            scope.strokeCap = 'round';
+            scope.strokeJoin = 'round';
 
             canvas.width = attrs.width || element.width();
             canvas.height = attrs.height || element.height();
@@ -97,20 +104,7 @@ var OpenTokWhiteboard = angular.module('opentok-whiteboard', ['opentok'])
             };
 
             var draw = function (update) {
-                if (!ctx) {
-                    ctx = canvas.getContext("2d");
-                    ctx.lineCap = "round";
-                    ctx.fillStyle = "solid";
-                }
-
-                ctx.strokeStyle = update.color;
-                ctx.lineWidth = update.lineWidth;
-                ctx.beginPath();
-                ctx.moveTo(update.fromX, update.fromY);
-                ctx.lineTo(update.toX, update.toY);
-                ctx.stroke();
-                ctx.closePath();
-                
+                window.path.add(update.toX, update.toY);
                 drawHistory.push(update);
             };
             
@@ -154,6 +148,13 @@ var OpenTokWhiteboard = angular.module('opentok-whiteboard', ['opentok'])
                 }
             };
             
+            /*
+             *    The Nuts
+             *    During the process of drawing, we collect coordinates on every [mouse|touch]move event.
+             *    These events occur as fast as the browser can create them, and is computer/browser dependent
+             *    
+             */
+            
             angular.element(canvas).on('mousedown mousemove mouseup mouseout touchstart touchmove touchend', 
               function (event) {
                 if (event.type === 'mousemove' && !client.dragging) {
@@ -170,18 +171,43 @@ var OpenTokWhiteboard = angular.module('opentok-whiteboard', ['opentok'])
                     offsetY = event.offsetY || event.originalEvent.pageY - offset.top ||
                        event.originalEvent.touches[0].pageY - offset.top,
                     x = offsetX * scaleX,
-                    y = offsetY * scaleY;
+                    y = offsetY * scaleY,
+                    start;
                 
                 switch (event.type) {
                 case 'mousedown':
                 case 'touchstart':
+                
+                    // Start dragging
                     client.dragging = true;
+                    
+                    // Where the line
                     client.lastX = x;
                     client.lastY = y;
+                    
+                    if( window.path ) {
+                        window.path.selected = false;
+                    }
+                    
+                    // Create a new path object
+                    window.path = new paper.Path();
+
+                    // Apply properties
+                    path.strokeColor = scope.color;
+                    path.strokeWidth = scope.lineWidth;
+                    path.strokeCap = scope.strokeCap;
+                    path.strokeJoin = scope.strokeJoin;
+
+                    // Move to start and draw a line from there
+                    start = new paper.Point(x, y);
+                    path.moveTo(start);
+
                     break;
                 case 'mousemove':
                 case 'touchmove':
                     if (client.dragging) {
+
+                        // Build update object
                         var update = {
                             id: OTSession.session && OTSession.session.connection &&
                                 OTSession.session.connection.connectionId,
@@ -201,6 +227,14 @@ var OpenTokWhiteboard = angular.module('opentok-whiteboard', ['opentok'])
                 case 'mouseup':
                 case 'touchend':
                 case 'mouseout':
+                
+                    // "Selected" puts draggable anchors at each point along the line. We don't want that.
+                    window.path.selected = false;
+                    
+                    // Apply smoothing.
+                    window.path.smooth();
+                    
+                    // End dragging.
                     client.dragging = false;
                 }
             });
