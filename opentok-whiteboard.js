@@ -71,14 +71,8 @@ var OpenTokWhiteboard = angular.module('opentok-whiteboard', ['opentok'])
             }
             
             var clearCanvas = function () {
-                ctx.save();
-
-                // Use the identity matrix while clearing the canvas
-                ctx.setTransform(1, 0, 0, 1, 0, 0);
-                ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-                // Restore the transform
-                ctx.restore();
+	            	paper.project.clear();
+	            	paper.view.update();
             };
 
             var clearStack = function () {
@@ -132,13 +126,8 @@ var OpenTokWhiteboard = angular.module('opentok-whiteboard', ['opentok'])
             };
 
             var undoWhiteBoard = function (data) {
-                for (i = data.start - data.count; i < data.start; i++) {
-                    drawHistory[i].show = 0;
-                }
-                clearCanvas();
-                drawHistory.forEach(function (update) {
-                    draw(update);
-                });
+	            data.visible = false;
+	            paper.view.update();
             };
 
             scope.redo = function () {
@@ -151,13 +140,8 @@ var OpenTokWhiteboard = angular.module('opentok-whiteboard', ['opentok'])
             };
 
             var redoWhiteBoard = function (data) {
-                for (i = data.start - data.count; i < data.start; i++) {
-                    drawHistory[i].show = 1;
-                }
-                clearCanvas();
-                drawHistory.forEach(function (update) {
-                    draw(update);
-                });
+                data.visible = true;
+                paper.view.update();
             };
 
             var draw = function (update) {
@@ -319,10 +303,7 @@ var OpenTokWhiteboard = angular.module('opentok-whiteboard', ['opentok'])
                     client.dragging = false;
                     if (count) {
                         start = drawHistory.length;
-                        undoStack.push({
-                            start: start,
-                            count: count
-                        });
+                        undoStack.push(window.path);
                         count = 0;
                     }
                 }
