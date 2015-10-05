@@ -20,6 +20,8 @@
     "tests"
   ],
   "dependencies": {
-    "opentok-angular": "~0.2.0"
+    "opentok-angular": "~0.2.0",
+    "paper": "~0.9.24"
+    
   }
 }

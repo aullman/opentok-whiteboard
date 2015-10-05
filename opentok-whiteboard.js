@@ -46,6 +46,10 @@ var OpenTokWhiteboard = angular.module('opentok-whiteboard', ['opentok'])
                 drawHistoryReceived,
                 batchUpdates = [],
                 iOS = /(iPad|iPhone|iPod)/g.test( navigator.userAgent );
+                
+
+            // Create an empty project and a view for the canvas:
+            paper.setup(canvas);
 
             scope.colors = [{'background-color': 'black'},
                             {'background-color': 'blue'},
@@ -55,19 +59,20 @@ var OpenTokWhiteboard = angular.module('opentok-whiteboard', ['opentok'])
                             {'background-color': 'purple'},
                             {'background-color': 'brown'}];
             scope.captureText = iOS ? 'Email' : 'Capture';
+            
+            scope.strokeCap = 'round';
+            scope.strokeJoin = 'round';
 
             canvas.width = attrs.width || element.width();
             canvas.height = attrs.height || element.height();
             
+            if (!ctx) {
+              ctx = canvas.getContext("2d");
+            }
+            
             var clearCanvas = function () {
-                ctx.save();
-
-                // Use the identity matrix while clearing the canvas
-                ctx.setTransform(1, 0, 0, 1, 0, 0);
-                ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-                // Restore the transform
-                ctx.restore();
+	            	paper.project.clear();
+	            	paper.view.update();
             };
 
             var clearStack = function () {
@@ -121,13 +126,8 @@ var OpenTokWhiteboard = angular.module('opentok-whiteboard', ['opentok'])
             };
 
             var undoWhiteBoard = function (data) {
-                for (i = data.start - data.count; i < data.start; i++) {
-                    drawHistory[i].show = 0;
-                }
-                clearCanvas();
-                drawHistory.forEach(function (update) {
-                    draw(update);
-                });
+	            data.visible = false;
+	            paper.view.update();
             };
 
             scope.redo = function () {
@@ -140,40 +140,13 @@ var OpenTokWhiteboard = angular.module('opentok-whiteboard', ['opentok'])
             };
 
             var redoWhiteBoard = function (data) {
-                for (i = data.start - data.count; i < data.start; i++) {
-                    drawHistory[i].show = 1;
-                }
-                clearCanvas();
-                drawHistory.forEach(function (update) {
-                    draw(update);
-                });
+                data.visible = true;
+                paper.view.update();
             };
 
             var draw = function (update) {
-                if (!ctx) {
-                    ctx = canvas.getContext("2d");
-                    ctx.lineCap = "round";
-                    ctx.fillStyle = "solid";
-                }
-                if (!update.show)
-                    return;
-                if(update.mode=="pen"){
-                    ctx.globalCompositeOperation = "source-over";
-                    ctx.strokeStyle = update.color;
-                    ctx.lineWidth = update.lineWidth;
-                    ctx.beginPath();
-                    ctx.moveTo(update.fromX, update.fromY);
-                    ctx.lineTo(update.toX, update.toY);
-                    ctx.stroke();
-                    ctx.closePath();
-                } else {
-                    ctx.globalCompositeOperation = "destination-out";
-                    ctx.lineWidth = update.lineWidth;
-                    ctx.beginPath();
-                    ctx.moveTo(update.fromX, update.fromY);
-                    ctx.lineTo(update.toX, update.toY);
-                    ctx.stroke();
-                }
+                window.path.add(update.toX, update.toY);
+                drawHistory.push(update);
             };
             
             var drawUpdates = function (updates) {
@@ -225,10 +198,18 @@ var OpenTokWhiteboard = angular.module('opentok-whiteboard', ['opentok'])
                         scope.redo();
                 }
             });
+            
+            /*
+             *    The Nuts
+             *    During the process of drawing, we collect coordinates on every [mouse|touch]move event.
+             *    These events occur as fast as the browser can create them, and is computer/browser dependent
+             *    
+             */
 
             angular.element(canvas).on('mousedown mousemove mouseup mouseout touchstart touchmove touchend touchcancel',
+
               function (event) {
-                if ((event.type === 'mousemove'|| event.type === 'touchmove') && !client.dragging) {
+                if ((event.type === 'mousemove' || event.type === 'touchmove' || event.type === 'mouseout') && !client.dragging) {
                     // Ignore mouse move Events if we're not dragging
                     return;
                 }
@@ -236,21 +217,47 @@ var OpenTokWhiteboard = angular.module('opentok-whiteboard', ['opentok'])
                 
                 var offset = angular.element(canvas).offset(),
                     scaleX = canvas.width / element.width(),
-                    scaleY = canvas.height / element.height();
-                var offsetX, offsetY, x, y;
+                    scaleY = canvas.height / element.height(),
+                    offsetX = event.offsetX || event.originalEvent.pageX - offset.left ||
+                       event.originalEvent.touches[0].pageX - offset.left,
+                    offsetY = event.offsetY || event.originalEvent.pageY - offset.top ||
+                       event.originalEvent.touches[0].pageY - offset.top,
+                    x = offsetX * scaleX,
+                    y = offsetY * scaleY,
+										mode = !scope.erasing ? "eraser" : "pen",
+                    start;
                 
                 switch (event.type) {
                 case 'mousedown':
                 case 'touchstart':
-                    offsetX = event.offsetX || event.originalEvent.pageX - offset.left ||
-                        event.originalEvent.touches[0].pageX - offset.left,
-                    offsetY = event.offsetY || event.originalEvent.pageY - offset.top ||
-                        event.originalEvent.touches[0].pageY - offset.top,
-                    x = offsetX * scaleX,
-                    y = offsetY * scaleY;
+                    // Start dragging
                     client.dragging = true;
+                    
+                    // Where the line
                     client.lastX = x;
                     client.lastY = y;
+                    
+                    if( window.path ) {
+                        window.path.selected = false;
+                    }
+                    
+                    // Create a new path object
+                    window.path = new paper.Path();
+
+                    // Apply properties
+                    path.strokeColor = scope.color;
+                    path.strokeWidth = scope.lineWidth;
+                    path.strokeCap = scope.strokeCap;
+                    path.strokeJoin = scope.strokeJoin;
+                    
+                    if(mode=="pen"){
+                    	path.blendMode = 'destination-out';
+                    }
+
+                    // Move to start and draw a line from there
+                    start = new paper.Point(x, y);
+                    path.moveTo(start);
+
                     break;
                 case 'mousemove':
                 case 'touchmove':
@@ -260,8 +267,9 @@ var OpenTokWhiteboard = angular.module('opentok-whiteboard', ['opentok'])
                         event.originalEvent.touches[0].pageY - offset.top,
                     x = offsetX * scaleX,
                     y = offsetY * scaleY;
-                    var mode = scope.erasing ? "eraser" : "pen";
                     if (client.dragging) {
+
+                        // Build update object
                         var update = {
                             id: OTSession.session && OTSession.session.connection &&
                                 OTSession.session.connection.connectionId,
@@ -287,13 +295,15 @@ var OpenTokWhiteboard = angular.module('opentok-whiteboard', ['opentok'])
                 case 'mouseup':
                 case 'touchend':
                 case 'mouseout':
+                    
+                    // Apply smoothing.
+                    window.path.smooth();
+                    
+                    // End dragging.
                     client.dragging = false;
                     if (count) {
                         start = drawHistory.length;
-                        undoStack.push({
-                            start: start,
-                            count: count
-                        });
+                        undoStack.push(window.path);
                         count = 0;
                     }
                 }
