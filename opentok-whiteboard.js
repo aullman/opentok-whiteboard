@@ -209,7 +209,7 @@ var OpenTokWhiteboard = angular.module('opentok-whiteboard', ['opentok'])
             angular.element(canvas).on('mousedown mousemove mouseup mouseout touchstart touchmove touchend touchcancel',
 
               function (event) {
-                if ((event.type === 'mousemove'|| event.type === 'touchmove') && !client.dragging) {
+                if ((event.type === 'mousemove' || event.type === 'touchmove' || event.type === 'mouseout') && !client.dragging) {
                     // Ignore mouse move Events if we're not dragging
                     return;
                 }
