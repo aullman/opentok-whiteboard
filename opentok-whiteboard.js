@@ -144,14 +144,44 @@ var OpenTokWhiteboard = angular.module('opentok-whiteboard', ['opentok'])
                 paper.view.update();
             };
 
-            var draw = function (update) {
+            var draw = function (update, full) {
+	            	
+	            	typeof( full !== undefined ) ? full : false;
+	            	
+	            	if( full ) {
+		            	// Create a new path object
+                  window.path = new paper.Path();
+
+                  // Apply properties
+                  path.strokeColor = scope.color;
+                  path.strokeWidth = scope.lineWidth;
+                  path.strokeCap = scope.strokeCap;
+                  path.strokeJoin = scope.strokeJoin;
+                  
+                  if(mode=="pen"){
+                  	path.blendMode = 'destination-out';
+                  }
+
+                  // Move to start and draw a line from there
+                  start = new paper.Point(update.fromX, update.fromY);
+                  path.moveTo(start);
+	            	}
+	            
                 window.path.add(update.toX, update.toY);
                 drawHistory.push(update);
+                
+                if( full ) {
+	                 // Apply smoothing.
+                    window.path.smooth();
+                    
+                    // End dragging.
+                    client.dragging = false;
+                }
             };
             
             var drawUpdates = function (updates) {
                 updates.forEach(function (update) {
-                    draw(update);
+                    draw(update, true);
                     drawHistory.push(update);
                 });
             };
