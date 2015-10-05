@@ -158,6 +158,8 @@ var OpenTokWhiteboard = angular.module('opentok-whiteboard', ['opentok'])
                   path.strokeCap = scope.strokeCap;
                   path.strokeJoin = scope.strokeJoin;
                   
+                  mode = !scope.erasing ? "eraser" : "pen";
+                  
                   if(mode=="pen"){
                   	path.blendMode = 'destination-out';
                   }
