@@ -153,7 +153,7 @@ var OpenTokWhiteboard = angular.module('opentok-whiteboard', ['opentok'])
                   window.path = new paper.Path();
 
                   // Apply properties
-                  path.strokeColor = scope.color;
+                  path.strokeColor = update.color;
                   path.strokeWidth = scope.lineWidth;
                   path.strokeCap = scope.strokeCap;
                   path.strokeJoin = scope.strokeJoin;
@@ -178,6 +178,11 @@ var OpenTokWhiteboard = angular.module('opentok-whiteboard', ['opentok'])
                     
                     // End dragging.
                     client.dragging = false;
+                    if (count) {
+                        start = drawHistory.length;
+                        undoStack.push(window.path);
+                        count = 0;
+                    }
                 }
             };
             
