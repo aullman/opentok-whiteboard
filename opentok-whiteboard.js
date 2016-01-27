@@ -36,7 +36,6 @@ var OpenTokWhiteboard = angular.module('opentok-whiteboard', ['opentok'])
                 select = element.context.querySelector("select"),
                 input = element.context.querySelector("input"),
                 client = {dragging:false},
-                ctx,
                 start = 0, //Grabs the end position of each stroke
                 count = 0, //Grabs the total count of each continuous stroke
                 undoStack = [], //Stores the value of start and count for each continuous stroke
@@ -49,7 +48,7 @@ var OpenTokWhiteboard = angular.module('opentok-whiteboard', ['opentok'])
                 
 
             // Create an empty project and a view for the canvas:
-            paper.setup(canvas);
+            $window.paper.setup(canvas);
 
             scope.colors = [{'background-color': 'black'},
                             {'background-color': 'blue'},
@@ -66,13 +65,9 @@ var OpenTokWhiteboard = angular.module('opentok-whiteboard', ['opentok'])
             canvas.width = attrs.width || element.width();
             canvas.height = attrs.height || element.height();
             
-            if (!ctx) {
-              ctx = canvas.getContext("2d");
-            }
-            
             var clearCanvas = function () {
-	            	paper.project.clear();
-	            	paper.view.update();
+                $window.paper.project.clear();
+                $window.paper.view.update();
             };
 
             var clearStack = function () {
@@ -81,7 +76,7 @@ var OpenTokWhiteboard = angular.module('opentok-whiteboard', ['opentok'])
                 redoStack = [];
                 start = 0;
                 count = 0;
-            }
+            };
             
             scope.changeColor = function (color) {
                 scope.color = color['background-color'];
@@ -126,8 +121,8 @@ var OpenTokWhiteboard = angular.module('opentok-whiteboard', ['opentok'])
             };
 
             var undoWhiteBoard = function (data) {
-	            data.visible = false;
-	            paper.view.update();
+                data.visible = false;
+                $window.paper.view.update();
             };
 
             scope.redo = function () {
@@ -141,43 +136,42 @@ var OpenTokWhiteboard = angular.module('opentok-whiteboard', ['opentok'])
 
             var redoWhiteBoard = function (data) {
                 data.visible = true;
-                paper.view.update();
+                $window.paper.view.update();
             };
 
             var draw = function (update, full) {
-	            	
-	            	typeof( full !== undefined ) ? full : false;
-	            	
-	            	if( full ) {
-		            	// Create a new path object
-                  window.path = new paper.Path();
+                console.log(update, full);
+                if (typeof full !== undefined) {
+                    // Create a new path object
+                    window.path = new $window.paper.Path();
 
-                  // Apply properties
-                  path.strokeColor = update.color;
-                  path.strokeWidth = scope.lineWidth;
-                  path.strokeCap = scope.strokeCap;
-                  path.strokeJoin = scope.strokeJoin;
-                  
-                  mode = !scope.erasing ? "eraser" : "pen";
-                  
-                  if(mode=="pen"){
-                  	path.blendMode = 'destination-out';
-                  }
+                    // Apply properties
+                    path.strokeColor = update.color;
+                    path.strokeWidth = scope.lineWidth;
+                    path.strokeCap = scope.strokeCap;
+                    path.strokeJoin = scope.strokeJoin;
+                      
+                    mode = !scope.erasing ? "eraser" : "pen";
+                      
+                    if (mode=="pen"){
+                        path.blendMode = 'destination-out';
+                    }
 
-                  // Move to start and draw a line from there
-                  start = new paper.Point(update.fromX, update.fromY);
-                  path.moveTo(start);
-	            	}
-	            
+                    // Move to start and draw a line from there
+                    start = new $window.paper.Point(update.fromX, update.fromY);
+                    path.moveTo(start);
+                }
+
                 window.path.add(update.toX, update.toY);
                 drawHistory.push(update);
                 
-                if( full ) {
-	                 // Apply smoothing.
+                if (typeof full !== undefined) {
+                     // Apply smoothing.
                     window.path.smooth();
                     
                     // End dragging.
                     client.dragging = false;
+
                     if (count) {
                         start = drawHistory.length;
                         undoStack.push(window.path);
@@ -261,7 +255,7 @@ var OpenTokWhiteboard = angular.module('opentok-whiteboard', ['opentok'])
                        event.originalEvent.touches[0].pageY - offset.top,
                     x = offsetX * scaleX,
                     y = offsetY * scaleY,
-										mode = !scope.erasing ? "eraser" : "pen",
+                                        mode = !scope.erasing ? "eraser" : "pen",
                     start;
                 
                 switch (event.type) {
@@ -279,7 +273,7 @@ var OpenTokWhiteboard = angular.module('opentok-whiteboard', ['opentok'])
                     }
                     
                     // Create a new path object
-                    window.path = new paper.Path();
+                    window.path = new $window.paper.Path();
 
                     // Apply properties
                     path.strokeColor = scope.color;
@@ -288,11 +282,11 @@ var OpenTokWhiteboard = angular.module('opentok-whiteboard', ['opentok'])
                     path.strokeJoin = scope.strokeJoin;
                     
                     if(mode=="pen"){
-                    	path.blendMode = 'destination-out';
+                        path.blendMode = 'destination-out';
                     }
 
                     // Move to start and draw a line from there
-                    start = new paper.Point(x, y);
+                    start = new $window.paper.Point(x, y);
                     path.moveTo(start);
 
                     break;
