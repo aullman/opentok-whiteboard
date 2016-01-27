@@ -104,10 +104,10 @@ var OpenTokWhiteboard = angular.module('opentok-whiteboard', ['opentok'])
             scope.capture = function () {
                 if (iOS) {
                     // On iOS you can put HTML in a mailto: link
-                    window.location.href = "mailto:?subject=Whiteboard&Body=<img src='" + canvas.toDataURL('image/png') + "'>";
+                    $window.location.href = "mailto:?subject=Whiteboard&Body=<img src='" + canvas.toDataURL('image/png') + "'>";
                 } else {
                     // We just open the image in a new window
-                    window.open(canvas.toDataURL('image/png'));
+                    $window.open(canvas.toDataURL('image/png'));
                 }
             };
 
@@ -140,41 +140,40 @@ var OpenTokWhiteboard = angular.module('opentok-whiteboard', ['opentok'])
             };
 
             var draw = function (update, full) {
-                console.log(update, full);
-                if (typeof full !== undefined) {
+                if (full) {
                     // Create a new path object
-                    window.path = new $window.paper.Path();
+                    $window.path = new $window.paper.Path();
 
                     // Apply properties
-                    path.strokeColor = update.color;
-                    path.strokeWidth = scope.lineWidth;
-                    path.strokeCap = scope.strokeCap;
-                    path.strokeJoin = scope.strokeJoin;
+                    $window.path.strokeColor = update.color;
+                    $window.path.strokeWidth = scope.lineWidth;
+                    $window.path.strokeCap = scope.strokeCap;
+                    $window.path.strokeJoin = scope.strokeJoin;
                       
                     mode = !scope.erasing ? "eraser" : "pen";
                       
                     if (mode=="pen"){
-                        path.blendMode = 'destination-out';
+                        $window.path.blendMode = 'destination-out';
                     }
 
                     // Move to start and draw a line from there
                     start = new $window.paper.Point(update.fromX, update.fromY);
-                    path.moveTo(start);
+                    $window.path.moveTo(start);
                 }
 
-                window.path.add(update.toX, update.toY);
+                $window.path.add(update.toX, update.toY);
                 drawHistory.push(update);
                 
-                if (typeof full !== undefined) {
+                if (full) {
                      // Apply smoothing.
-                    window.path.smooth();
+                    $window.path.smooth();
                     
                     // End dragging.
                     client.dragging = false;
 
                     if (count) {
                         start = drawHistory.length;
-                        undoStack.push(window.path);
+                        undoStack.push($window.path);
                         count = 0;
                     }
                 }
@@ -268,26 +267,26 @@ var OpenTokWhiteboard = angular.module('opentok-whiteboard', ['opentok'])
                     client.lastX = x;
                     client.lastY = y;
                     
-                    if( window.path ) {
-                        window.path.selected = false;
+                    if( $window.path ) {
+                        $window.path.selected = false;
                     }
                     
                     // Create a new path object
-                    window.path = new $window.paper.Path();
+                    $window.path = new $window.paper.Path();
 
                     // Apply properties
-                    path.strokeColor = scope.color;
-                    path.strokeWidth = scope.lineWidth;
-                    path.strokeCap = scope.strokeCap;
-                    path.strokeJoin = scope.strokeJoin;
+                    $window.path.strokeColor = scope.color;
+                    $window.path.strokeWidth = scope.lineWidth;
+                    $window.path.strokeCap = scope.strokeCap;
+                    $window.path.strokeJoin = scope.strokeJoin;
                     
                     if(mode=="pen"){
-                        path.blendMode = 'destination-out';
+                        $window.path.blendMode = 'destination-out';
                     }
 
                     // Move to start and draw a line from there
                     start = new $window.paper.Point(x, y);
-                    path.moveTo(start);
+                    $window.path.moveTo(start);
 
                     break;
                 case 'mousemove':
@@ -328,13 +327,13 @@ var OpenTokWhiteboard = angular.module('opentok-whiteboard', ['opentok'])
                 case 'mouseout':
                     
                     // Apply smoothing.
-                    window.path.smooth();
+                    $window.path.smooth();
                     
                     // End dragging.
                     client.dragging = false;
                     if (count) {
                         start = drawHistory.length;
-                        undoStack.push(window.path);
+                        undoStack.push($window.path);
                         count = 0;
                     }
                 }
