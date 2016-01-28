@@ -9,7 +9,7 @@
 **/
 
 var OpenTokWhiteboard = angular.module('opentok-whiteboard', ['opentok'])
-.directive('otWhiteboard', ['OTSession', '$window', '$timeout', function (OTSession, $window, $timeout) {
+.directive('otWhiteboard', ['OTSession', '$window', function (OTSession, $window) {
     return {
         restrict: 'E',
         template: '<canvas></canvas>' + 
@@ -148,10 +148,7 @@ var OpenTokWhiteboard = angular.module('opentok-whiteboard', ['opentok'])
                     
                     // End dragging.
                     client.dragging = false;
-
-                    $timeout(function() {
-                        scope.path = null;
-                    }, 50);
+                    scope.path = null;
                 } else {
                     if (remote && !scope.path) {
                         // Create a new path object
