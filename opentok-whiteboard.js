@@ -134,10 +134,9 @@ var OpenTokWhiteboard = angular.module('opentok-whiteboard', ['opentok'])
                 $window.paper.view.update();
             };
 
-            var draw = function (update, remote) {
+            var draw = function (update, history) {
                 if (update.end && scope.path) {
                     start = drawHistory.length;
-                    drawHistory.push(scope.path);
                     undoStack.push(scope.path);
                     count = 0;
 
@@ -150,7 +149,7 @@ var OpenTokWhiteboard = angular.module('opentok-whiteboard', ['opentok'])
                     client.dragging = false;
                     scope.path = null;
                 } else {
-                    if (remote && !scope.path) {
+                    if (history && !scope.path) {
                         // Create a new path object
                         scope.path = new $window.paper.Path();
 
@@ -176,7 +175,7 @@ var OpenTokWhiteboard = angular.module('opentok-whiteboard', ['opentok'])
             var drawUpdates = function (updates) {
                 updates.forEach(function (update) {
                     draw(update, true);
-                    //drawHistory.push(update);
+                    drawHistory.push(update);
                 });
             };
             
@@ -310,7 +309,7 @@ var OpenTokWhiteboard = angular.module('opentok-whiteboard', ['opentok'])
                         count++;
                         redoStack = [];
                         draw(update);
-                        //drawHistory.push(update);
+                        drawHistory.push(update);
                         client.lastX = x;
                         client.lastY = y;
                         sendUpdate('otWhiteboard_update', update);
@@ -328,10 +327,8 @@ var OpenTokWhiteboard = angular.module('opentok-whiteboard', ['opentok'])
                             end: true
                         };
 
-                        // Update local path
                         draw(update);
-
-                        // Send update
+                        drawHistory.push(update);
                         sendUpdate('otWhiteboard_update', update);
                     }
                 }
