@@ -109,13 +109,12 @@ var OpenTokWhiteboard = angular.module('opentok-whiteboard', ['opentok'])
             scope.undo = function () {
                 if (!undoStack.length)
                     return;
-                var data = undoStack[undoStack.length - 1];
-                undoWhiteBoard(data);
-                sendUpdate('otWhiteboard_undo', data);
+                undoWhiteBoard();
+                sendUpdate('otWhiteboard_undo');
             };
 
-            var undoWhiteBoard = function (data) {
-                data = undoStack.pop();
+            var undoWhiteBoard = function () {
+                var data = undoStack.pop();
                 redoStack.push(data);
                 data.visible = false;
                 $window.paper.view.update();
@@ -124,13 +123,12 @@ var OpenTokWhiteboard = angular.module('opentok-whiteboard', ['opentok'])
             scope.redo = function () {
                 if (!redoStack.length)
                     return;
-                var data = redoStack[redoStack.length - 1];
-                redoWhiteBoard(data);
-                sendUpdate('otWhiteboard_redo', data);
+                redoWhiteBoard();
+                sendUpdate('otWhiteboard_redo');
             };
 
-            var redoWhiteBoard = function (data) {
-                data = redoStack.pop();
+            var redoWhiteBoard = function () {
+                var data = redoStack.pop();
                 undoStack.push(data);
                 data.visible = true;
                 $window.paper.view.update();
@@ -353,7 +351,7 @@ var OpenTokWhiteboard = angular.module('opentok-whiteboard', ['opentok'])
                     'signal:otWhiteboard_undo': function (event) {
                         if (event.from.connectionId !== OTSession.session.connection.connectionId) {
                             JSON.parse(event.data).forEach(function (data) {
-                                undoWhiteBoard(data[1]);
+                                undoWhiteBoard();
                             });
                             scope.$emit('otWhiteboardUpdate');
                         }
@@ -361,7 +359,7 @@ var OpenTokWhiteboard = angular.module('opentok-whiteboard', ['opentok'])
                     'signal:otWhiteboard_redo': function (event) {
                         if (event.from.connectionId !== OTSession.session.connection.connectionId) {
                             JSON.parse(event.data).forEach(function (data) {
-                                redoWhiteBoard(data[1]);
+                                redoWhiteBoard();
                             });
                             scope.$emit('otWhiteboardUpdate');
                         }
