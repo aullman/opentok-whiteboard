@@ -160,6 +160,7 @@ var OpenTokWhiteboard = angular.module('opentok-whiteboard', ['opentok'])
 
                         var start = new $window.paper.Point(update.fromX, update.fromY);
                         path.moveTo(start);
+                        $window.paper.view.draw();
 
                         client.pathId = path.id;
                         drawHistory.push(path);
@@ -168,6 +169,7 @@ var OpenTokWhiteboard = angular.module('opentok-whiteboard', ['opentok'])
                         drawHistory.some(function(path) {
                             if (path.id === client.pathId) {
                                 path.add(update.toX, update.toY);
+                                $window.paper.view.draw();
                                 return;
                             }
                         });
@@ -179,6 +181,7 @@ var OpenTokWhiteboard = angular.module('opentok-whiteboard', ['opentok'])
                                 path.smooth({
                                     type: 'continuous'
                                 });
+                                $window.paper.view.draw();
                                 return;
                             }
                         });
