@@ -61,8 +61,18 @@ var OpenTokWhiteboard = angular.module('opentok-whiteboard', ['opentok'])
 
             // Force paper to update view
             var updateView = function() {
+                // $window.paper.view.viewSize.width++;
+                // $window.paper.view.viewSize.height++;
+                // $window.paper.view.update();
+                // $window.paper.view.viewSize.width--;
+                // $window.paper.view.viewSize.height--;
                 $window.paper.view.update();
             };
+
+            // Wait for canvas to get setup before fixing it's size
+            $timeout(function() {
+                updateView();
+            }, 400);
 
             scope.colors = [{'background-color': 'black'},
                             {'background-color': 'blue'},
