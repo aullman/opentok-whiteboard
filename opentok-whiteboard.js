@@ -178,9 +178,7 @@ var OpenTokWhiteboard = angular.module('opentok-whiteboard', ['opentok'])
                         drawHistory.some(function(path) {
                             if (path.id === client.pathId) {
                                 undoStack.push(path.id);
-                                path.smooth({
-                                    type: 'continuous'
-                                });
+                                path.simplify(1.5);
                                 $window.paper.view.draw();
                                 return;
                             }
