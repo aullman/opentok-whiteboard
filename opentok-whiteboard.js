@@ -36,7 +36,6 @@ var OpenTokWhiteboard = angular.module('opentok-whiteboard', ['opentok'])
                 select = element.context.querySelector("select"),
                 input = element.context.querySelector("input"),
                 client = {dragging:false},
-                start = 0, //Grabs the end position of each stroke
                 count = 0, //Grabs the total count of each continuous stroke
                 undoStack = [], //Stores the value of start and count for each continuous stroke
                 redoStack = [], //When undo pops, data is sent to redoStack
@@ -72,7 +71,6 @@ var OpenTokWhiteboard = angular.module('opentok-whiteboard', ['opentok'])
                 drawHistory = [];
                 undoStack = [];
                 redoStack = [];
-                start = 0;
                 count = 0;
             };
             
@@ -109,73 +107,89 @@ var OpenTokWhiteboard = angular.module('opentok-whiteboard', ['opentok'])
             scope.undo = function () {
                 if (!undoStack.length)
                     return;
-                undoWhiteBoard();
-                sendUpdate('otWhiteboard_undo');
+                var id = undoStack.pop();
+                undoWhiteBoard(id);
+                sendUpdate('otWhiteboard_undo', id);
             };
 
-            var undoWhiteBoard = function () {
-                var data = undoStack.pop();
-                redoStack.push(data);
-                data.visible = false;
-                $window.paper.view.update();
+            var undoWhiteBoard = function (id) {
+                redoStack.push(id);
+                drawHistory.some(function(path) {
+                    if (path.id === id) {
+                        path.visible = false;
+                        $window.paper.view.update();
+                        return;
+                    }
+                });
             };
 
             scope.redo = function () {
                 if (!redoStack.length)
                     return;
-                redoWhiteBoard();
-                sendUpdate('otWhiteboard_redo');
+                var id = redoStack.pop();
+                redoWhiteBoard(id);
+                sendUpdate('otWhiteboard_redo', id);
             };
 
-            var redoWhiteBoard = function () {
-                var data = redoStack.pop();
-                undoStack.push(data);
-                data.visible = true;
-                $window.paper.view.update();
+            var redoWhiteBoard = function (id) {
+                undoStack.push(id);
+                drawHistory.some(function(path) {
+                    if (path.id === id) {
+                        path.visible = true;
+                        $window.paper.view.update();
+                        return;
+                    }
+                });
             };
 
-            var draw = function (update, history) {
-                if (update.end && scope.path) {
-                    start = drawHistory.length;
-                    undoStack.push(scope.path);
-                    count = 0;
+            var draw = function (update) {
+                switch (update.event) {
+                    case 'start':
+                        var path = new $window.paper.Path();
 
-                    // Apply smoothing
-                    scope.path.smooth({
-                        type: 'continuous'
-                    });
-                    
-                    // End dragging.
-                    client.dragging = false;
-                    scope.path = null;
-                } else {
-                    if (history && !scope.path) {
-                        // Create a new path object
-                        scope.path = new $window.paper.Path();
-
-                        // Apply properties
-                        scope.path.strokeColor = update.color;
-                        scope.path.strokeWidth = update.lineWidth;
-                        scope.path.strokeCap = scope.strokeCap;
-                        scope.path.strokeJoin = scope.strokeJoin;
+                        path.selected = false;
+                        path.strokeColor = update.color;
+                        path.strokeWidth = scope.lineWidth;
+                        path.strokeCap = scope.strokeCap;
+                        path.strokeJoin = scope.strokeJoin;
 
                         if (update.mode === 'eraser') {
-                            scope.path.blendMode = 'destination-out';
+                            path.blendMode = 'destination-out';
+                            path.strokeWidth = 50;
                         }
 
-                        // Move to start and draw a line from there
-                        start = new $window.paper.Point(update.fromX, update.fromY);
-                        scope.path.moveTo(start);
-                    }
+                        var start = new $window.paper.Point(update.fromX, update.fromY);
+                        path.moveTo(start);
 
-                    scope.path.add(update.toX, update.toY);
+                        client.pathId = path.id;
+                        drawHistory.push(path);
+                        break;
+                    case 'drag':
+                        drawHistory.some(function(path) {
+                            if (path.id === client.pathId) {
+                                path.add(update.toX, update.toY);
+                                return;
+                            }
+                        });
+                        break;
+                    case 'end':
+                        drawHistory.some(function(path) {
+                            if (path.id === client.pathId) {
+                                undoStack.push(path.id);
+                                path.smooth({
+                                    type: 'continuous'
+                                });
+                                return;
+                            }
+                        });
+                        client.pathId = null;
+                        break;
                 }
             };
             
             var drawUpdates = function (updates) {
                 updates.forEach(function (update) {
-                    draw(update, true);
-                    drawHistory.push(update);
+                    draw(update);
                 });
             };
             
@@ -249,40 +263,29 @@ var OpenTokWhiteboard = angular.module('opentok-whiteboard', ['opentok'])
                     x = offsetX * scaleX,
                     y = offsetY * scaleY,
                     mode = scope.erasing ? 'eraser' : 'pen',
-                    start;
-                
+                    update;
+
                 switch (event.type) {
                 case 'mousedown':
                 case 'touchstart':
                     // Start dragging
                     client.dragging = true;
-                    
-                    // Where the line
+
                     client.lastX = x;
                     client.lastY = y;
-                    
-                    if (scope.path) {
-                        scope.path.selected = false;
-                    }
-                    
-                    // Create a new path object
-                    scope.path = new $window.paper.Path();
 
-                    // Apply properties
-                    scope.path.strokeColor = scope.color;
-                    scope.path.strokeWidth = scope.lineWidth;
-                    scope.path.strokeCap = scope.strokeCap;
-                    scope.path.strokeJoin = scope.strokeJoin;
-                    
-                    if (mode === 'eraser') {
-                        scope.path.strokeWidth = 50;
-                        scope.path.blendMode = 'destination-out';
-                    }
+                    update = {
+                        id: OTSession.session && OTSession.session.connection &&
+                            OTSession.session.connection.connectionId,
+                        fromX: client.lastX,
+                        fromY: client.lastY,
+                        mode: mode,
+                        color: scope.color,
+                        event: 'start'
+                    };
 
-                    // Move to start and draw a line from there
-                    start = new $window.paper.Point(x, y);
-                    scope.path.moveTo(start);
-
+                    draw(update);
+                    sendUpdate('otWhiteboard_update', update);
                     break;
                 case 'mousemove':
                 case 'touchmove':
@@ -292,26 +295,23 @@ var OpenTokWhiteboard = angular.module('opentok-whiteboard', ['opentok'])
                         event.originalEvent.touches[0].pageY - offset.top,
                     x = offsetX * scaleX,
                     y = offsetY * scaleY;
+
                     if (client.dragging) {
                         // Build update object
-                        var update = {
+                        update = {
                             id: OTSession.session && OTSession.session.connection &&
                                 OTSession.session.connection.connectionId,
                             fromX: client.lastX,
                             fromY: client.lastY,
                             toX: x,
                             toY: y,
-                            mode: mode,
-                            color: scope.color,
-                            lineWidth: mode === 'pen' ? scope.lineWidth : 50,
-                            show: 1
+                            event: 'drag'
                         };
                         count++;
                         redoStack = [];
-                        draw(update);
-                        drawHistory.push(update);
                         client.lastX = x;
                         client.lastY = y;
+                        draw(update);
                         sendUpdate('otWhiteboard_update', update);
                     }
                     break;
@@ -319,16 +319,16 @@ var OpenTokWhiteboard = angular.module('opentok-whiteboard', ['opentok'])
                 case 'mouseup':
                 case 'touchend':
                 case 'mouseout':
+                    client.dragging = false;
+
                     if (count) {
-                        // End drawing the stroke
-                        var update = {
+                        update = {
                             id: OTSession.session && OTSession.session.connection &&
                                 OTSession.session.connection.connectionId,
-                            end: true
+                            event: 'end'
                         };
 
                         draw(update);
-                        drawHistory.push(update);
                         sendUpdate('otWhiteboard_update', update);
                     }
                 }
@@ -345,7 +345,7 @@ var OpenTokWhiteboard = angular.module('opentok-whiteboard', ['opentok'])
                     'signal:otWhiteboard_undo': function (event) {
                         if (event.from.connectionId !== OTSession.session.connection.connectionId) {
                             JSON.parse(event.data).forEach(function (data) {
-                                undoWhiteBoard();
+                                undoWhiteBoard(data);
                             });
                             scope.$emit('otWhiteboardUpdate');
                         }
@@ -353,7 +353,7 @@ var OpenTokWhiteboard = angular.module('opentok-whiteboard', ['opentok'])
                     'signal:otWhiteboard_redo': function (event) {
                         if (event.from.connectionId !== OTSession.session.connection.connectionId) {
                             JSON.parse(event.data).forEach(function (data) {
-                                redoWhiteBoard();
+                                redoWhiteBoard(data);
                             });
                             scope.$emit('otWhiteboardUpdate');
                         }
