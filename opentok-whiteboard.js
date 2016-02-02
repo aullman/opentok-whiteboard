@@ -9,7 +9,7 @@
 **/
 
 var OpenTokWhiteboard = angular.module('opentok-whiteboard', ['opentok'])
-.directive('otWhiteboard', ['OTSession', '$window', function (OTSession, $window) {
+.directive('otWhiteboard', ['OTSession', '$window', '$timeout', function (OTSession, $window, $timeout) {
     return {
         restrict: 'E',
         template: '<canvas></canvas>' + 
@@ -39,15 +39,30 @@ var OpenTokWhiteboard = angular.module('opentok-whiteboard', ['opentok'])
                 count = 0, //Grabs the total count of each continuous stroke
                 undoStack = [], //Stores the value of start and count for each continuous stroke
                 redoStack = [], //When undo pops, data is sent to redoStack
+                pathStack = [],
                 drawHistory = [],
                 drawHistoryReceivedFrom,
                 drawHistoryReceived,
                 batchUpdates = [],
+                resizeTimeout,
                 iOS = /(iPad|iPhone|iPod)/g.test( navigator.userAgent );
                 
 
             // Create an empty project and a view for the canvas:
             $window.paper.setup(canvas);
+
+            // Update paper view dimensions on resize
+            $window.addEventListener('resize', function() {
+                $timeout.cancel(resizeTimeout);
+                resizeTimeout = $timeout(function() {
+                    updateView();
+                }, 400);
+            });
+
+            // Force paper to update view
+            var updateView = function() {
+                $window.paper.view.update();
+            };
 
             scope.colors = [{'background-color': 'black'},
                             {'background-color': 'blue'},
@@ -67,11 +82,12 @@ var OpenTokWhiteboard = angular.module('opentok-whiteboard', ['opentok'])
             
             var clearCanvas = function () {
                 $window.paper.project.clear();
-                $window.paper.view.update();
                 drawHistory = [];
+                pathStack = [];
                 undoStack = [];
                 redoStack = [];
                 count = 0;
+                updateView();
             };
             
             scope.changeColor = function (color) {
@@ -114,10 +130,10 @@ var OpenTokWhiteboard = angular.module('opentok-whiteboard', ['opentok'])
 
             var undoWhiteBoard = function (id) {
                 redoStack.push(id);
-                drawHistory.some(function(path) {
+                pathStack.some(function(path) {
                     if (path.id === id) {
                         path.visible = false;
-                        $window.paper.view.update();
+                        updateView();
                         return;
                     }
                 });
@@ -133,16 +149,18 @@ var OpenTokWhiteboard = angular.module('opentok-whiteboard', ['opentok'])
 
             var redoWhiteBoard = function (id) {
                 undoStack.push(id);
-                drawHistory.some(function(path) {
+                pathStack.some(function(path) {
                     if (path.id === id) {
                         path.visible = true;
-                        $window.paper.view.update();
+                        updateView();
                         return;
                     }
                 });
             };
 
             var draw = function (update) {
+                drawHistory.push(update);
+
                 switch (update.event) {
                     case 'start':
                         var path = new $window.paper.Path();
@@ -163,10 +181,10 @@ var OpenTokWhiteboard = angular.module('opentok-whiteboard', ['opentok'])
                         $window.paper.view.draw();
 
                         client.pathId = path.id;
-                        drawHistory.push(path);
+                        pathStack.push(path);
                         break;
                     case 'drag':
-                        drawHistory.some(function(path) {
+                        pathStack.some(function(path) {
                             if (path.id === client.pathId) {
                                 path.add(update.toX, update.toY);
                                 $window.paper.view.draw();
@@ -175,10 +193,10 @@ var OpenTokWhiteboard = angular.module('opentok-whiteboard', ['opentok'])
                         });
                         break;
                     case 'end':
-                        drawHistory.some(function(path) {
+                        pathStack.some(function(path) {
                             if (path.id === client.pathId) {
                                 undoStack.push(path.id);
-                                path.simplify(1.5);
+                                path.simplify();
                                 $window.paper.view.draw();
                                 return;
                             }
@@ -377,6 +395,12 @@ var OpenTokWhiteboard = angular.module('opentok-whiteboard', ['opentok'])
                         if (drawHistory.length > 0 && event.connection.connectionId !==
                                 OTSession.session.connection.connectionId) {
                             batchSignal('otWhiteboard_history', drawHistory, event.connection);
+                            // Iterate through redo stack to hide any paths which have been undone
+                            if (redoStack.length) {
+                                redoStack.forEach(function(id) {
+                                    sendUpdate('otWhiteboard_undo', id);
+                                });
+                            }
                         }
                     }
                 });
