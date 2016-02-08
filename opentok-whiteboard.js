@@ -1,6 +1,6 @@
 /*!
  *  opentok-whiteboard (http://github.com/aullman/opentok-whiteboard)
- *  
+ *
  *  Shared Whiteboard that works with OpenTok
  *
  *  @Author: Adam Ullman (http://github.com/aullman)
@@ -12,7 +12,7 @@ var OpenTokWhiteboard = angular.module('opentok-whiteboard', ['opentok'])
 .directive('otWhiteboard', ['OTSession', '$window', '$timeout', function (OTSession, $window, $timeout) {
     return {
         restrict: 'E',
-        template: '<canvas></canvas>' + 
+        template: '<canvas></canvas>' +
 
             '<div class="OT_panel">' +
 
@@ -22,7 +22,7 @@ var OpenTokWhiteboard = angular.module('opentok-whiteboard', ['opentok'])
 
             '<input type="button" ng-click="erase()" ng-class="{OT_erase: true, OT_selected: erasing}"' +
             ' value="Eraser"></input>' +
-            
+
             '<input type="button" ng-click="capture()" class="OT_capture" value="{{captureText}}"></input>' +
 
             '<input type="button" ng-click="undo()" class="OT_capture" value="Undo"></input>' +
@@ -46,33 +46,12 @@ var OpenTokWhiteboard = angular.module('opentok-whiteboard', ['opentok'])
                 batchUpdates = [],
                 resizeTimeout,
                 iOS = /(iPad|iPhone|iPod)/g.test( navigator.userAgent );
-                
+
+            canvas.width = attrs.width || element.width();
+            canvas.height = attrs.height || element.height();
 
             // Create an empty project and a view for the canvas:
             $window.paper.setup(canvas);
-
-            // Update paper view dimensions on resize
-            $window.addEventListener('resize', function() {
-                $timeout.cancel(resizeTimeout);
-                resizeTimeout = $timeout(function() {
-                    updateView();
-                }, 400);
-            });
-
-            // Force paper to update view
-            var updateView = function() {
-                // $window.paper.view.viewSize.width++;
-                // $window.paper.view.viewSize.height++;
-                // $window.paper.view.update();
-                // $window.paper.view.viewSize.width--;
-                // $window.paper.view.viewSize.height--;
-                $window.paper.view.update();
-            };
-
-            // Wait for canvas to get setup before fixing it's size
-            $timeout(function() {
-                updateView();
-            }, 400);
 
             scope.colors = [{'background-color': 'black'},
                             {'background-color': 'blue'},
@@ -82,31 +61,28 @@ var OpenTokWhiteboard = angular.module('opentok-whiteboard', ['opentok'])
                             {'background-color': 'purple'},
                             {'background-color': 'brown'}];
             scope.captureText = iOS ? 'Email' : 'Capture';
-            
+
             scope.strokeCap = 'round';
             scope.strokeJoin = 'round';
             scope.lineWidth = 2;
 
-            canvas.width = attrs.width || element.width();
-            canvas.height = attrs.height || element.height();
-            
             var clearCanvas = function () {
                 $window.paper.project.clear();
+                $window.paper.view.update();
                 drawHistory = [];
                 pathStack = [];
                 undoStack = [];
                 redoStack = [];
                 count = 0;
-                updateView();
             };
-            
+
             scope.changeColor = function (color) {
                 scope.color = color['background-color'];
                 scope.erasing = false;
             };
-            
+
             scope.changeColor(scope.colors[Math.floor(Math.random() * scope.colors.length)]);
-            
+
             scope.clear = function () {
                 clearCanvas();
                 if (OTSession.session) {
@@ -115,11 +91,11 @@ var OpenTokWhiteboard = angular.module('opentok-whiteboard', ['opentok'])
                     });
                 }
             };
-            
+
             scope.erase = function () {
                 scope.erasing = true;
             };
-            
+
             scope.capture = function () {
                 if (iOS) {
                     // On iOS you can put HTML in a mailto: link
@@ -143,7 +119,7 @@ var OpenTokWhiteboard = angular.module('opentok-whiteboard', ['opentok'])
                 pathStack.some(function(path) {
                     if (path.id === id) {
                         path.visible = false;
-                        updateView();
+                        $window.paper.view.update();
                         return;
                     }
                 });
@@ -162,7 +138,7 @@ var OpenTokWhiteboard = angular.module('opentok-whiteboard', ['opentok'])
                 pathStack.some(function(path) {
                     if (path.id === id) {
                         path.visible = true;
-                        updateView();
+                        $window.paper.view.update();
                         return;
                     }
                 });
@@ -215,13 +191,13 @@ var OpenTokWhiteboard = angular.module('opentok-whiteboard', ['opentok'])
                         break;
                 }
             };
-            
+
             var drawUpdates = function (updates) {
                 updates.forEach(function (update) {
                     draw(update);
                 });
             };
-            
+
             var batchSignal = function (type, data, toConnection) {
                 // We send data in small chunks so that they fit in a signal
                 // Each packet is maximum ~250 chars, we can fit 8192/250 ~= 32 updates per signal
@@ -241,7 +217,7 @@ var OpenTokWhiteboard = angular.module('opentok-whiteboard', ['opentok'])
                     OTSession.session.signal(signal, signalError);
                 }
             };
-            
+
             var updateTimeout;
             var sendUpdate = function (type, update) {
                 if (OTSession.session) {
@@ -255,7 +231,7 @@ var OpenTokWhiteboard = angular.module('opentok-whiteboard', ['opentok'])
                     }
                 }
             };
-            
+
             angular.element(document).on('keyup', function (event) {
                 if (event.ctrlKey) {
                     if (event.keyCode === 90)
@@ -264,12 +240,12 @@ var OpenTokWhiteboard = angular.module('opentok-whiteboard', ['opentok'])
                         scope.redo();
                 }
             });
-            
+
             /*
              *    The Nuts
              *    During the process of drawing, we collect coordinates on every [mouse|touch]move event.
              *    These events occur as fast as the browser can create them, and is computer/browser dependent
-             *    
+             *
              */
 
             angular.element(canvas).on('mousedown mousemove mouseup mouseout touchstart touchmove touchend touchcancel',
@@ -281,7 +257,7 @@ var OpenTokWhiteboard = angular.module('opentok-whiteboard', ['opentok'])
                 }
 
                 event.preventDefault();
-                
+
                 var offset = angular.element(canvas).offset(),
                     scaleX = canvas.width / element.width(),
                     scaleY = canvas.height / element.height(),
@@ -362,7 +338,7 @@ var OpenTokWhiteboard = angular.module('opentok-whiteboard', ['opentok'])
                     }
                 }
             });
-            
+
             if (OTSession.session) {
                 OTSession.session.on({
                     'signal:otWhiteboard_update': function (event) {
