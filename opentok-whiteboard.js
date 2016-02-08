@@ -224,12 +224,12 @@ var OpenTokWhiteboard = angular.module('opentok-whiteboard', ['opentok'])
             };
 
             var updateTimeout;
-            var sendUpdate = function (type, update) {
+            var sendUpdate = function (type, update, toConnection) {
                 if (OTSession.session) {
                     batchUpdates.push(update);
                     if (!updateTimeout) {
                         updateTimeout = setTimeout(function () {
-                            batchSignal(type, batchUpdates);
+                            batchSignal(type, batchUpdates, toConnection);
                             batchUpdates = [];
                             updateTimeout = null;
                         }, 100);
@@ -389,7 +389,7 @@ var OpenTokWhiteboard = angular.module('opentok-whiteboard', ['opentok'])
                             // Iterate through redo stack to hide any paths which have been undone
                             if (redoStack.length) {
                                 redoStack.forEach(function(id) {
-                                    sendUpdate('otWhiteboard_undo', id);
+                                    sendUpdate('otWhiteboard_undo', id, event.connection);
                                 });
                             }
                         }
