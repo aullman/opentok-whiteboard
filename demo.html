@@ -12,7 +12,7 @@
         <script src="bower_components/opentok-angular/opentok-angular.js" type="text/javascript" charset="utf-8"></script>
         <script src="opentok-whiteboard.js" type="text/javascript" charset="utf-8"></script>
         <link rel="stylesheet" href="opentok-whiteboard.css" type="text/css" media="screen" charset="utf-8">
-        
+
         <script type="text/javascript" charset="utf-8">
         angular.module('demo', ['opentok', 'opentok-whiteboard'])
         .controller('DemoCtrl', ['$scope', 'OTSession', function ($scope, OTSession) {
@@ -48,6 +48,6 @@
         </style>
     </head>
     <body ng-controller="DemoCtrl">
-        <ot-whiteboard></ot-whiteboard>
+        <ot-whiteboard width="1280" height="960"></ot-whiteboard>
     </body>
 </html>

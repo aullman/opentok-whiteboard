@@ -9,7 +9,7 @@
 **/
 
 var OpenTokWhiteboard = angular.module('opentok-whiteboard', ['opentok'])
-.directive('otWhiteboard', ['OTSession', '$window', '$timeout', function (OTSession, $window, $timeout) {
+.directive('otWhiteboard', ['OTSession', '$window', function (OTSession, $window) {
     return {
         restrict: 'E',
         template: '<canvas></canvas>' +
@@ -47,11 +47,16 @@ var OpenTokWhiteboard = angular.module('opentok-whiteboard', ['opentok'])
                 resizeTimeout,
                 iOS = /(iPad|iPhone|iPod)/g.test( navigator.userAgent );
 
+            // Create an empty project and a view for the canvas
+            $window.paper.setup(canvas);
+
+            // Set canvas size
             canvas.width = attrs.width || element.width();
             canvas.height = attrs.height || element.height();
 
-            // Create an empty project and a view for the canvas:
-            $window.paper.setup(canvas);
+            // Set paper.js view size
+            $window.paper.view.viewSize = new $window.paper.Size(canvas.width, canvas.height);
+            $window.paper.view.draw();
 
             scope.colors = [{'background-color': 'black'},
                             {'background-color': 'blue'},
