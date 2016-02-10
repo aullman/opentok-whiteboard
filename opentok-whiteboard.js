@@ -121,11 +121,10 @@ var OpenTokWhiteboard = angular.module('opentok-whiteboard', ['opentok'])
 
             var undoWhiteBoard = function (id) {
                 redoStack.push(id);
-                pathStack.some(function(path) {
+                pathStack.forEach(function(path) {
                     if (path.id === id) {
                         path.visible = false;
                         $window.paper.view.update();
-                        return;
                     }
                 });
             };
@@ -140,11 +139,10 @@ var OpenTokWhiteboard = angular.module('opentok-whiteboard', ['opentok'])
 
             var redoWhiteBoard = function (id) {
                 undoStack.push(id);
-                pathStack.some(function(path) {
+                pathStack.forEach(function(path) {
                     if (path.id === id) {
                         path.visible = true;
                         $window.paper.view.update();
-                        return;
                     }
                 });
             };
@@ -175,21 +173,19 @@ var OpenTokWhiteboard = angular.module('opentok-whiteboard', ['opentok'])
                         pathStack.push(path);
                         break;
                     case 'drag':
-                        pathStack.some(function(path) {
+                        pathStack.forEach(function(path) {
                             if (path.id === client.pathId) {
                                 path.add(update.toX, update.toY);
                                 $window.paper.view.draw();
-                                return;
                             }
                         });
                         break;
                     case 'end':
-                        pathStack.some(function(path) {
+                        pathStack.forEach(function(path) {
                             if (path.id === client.pathId) {
                                 undoStack.push(path.id);
                                 path.simplify();
                                 $window.paper.view.draw();
-                                return;
                             }
                         });
                         client.pathId = null;
