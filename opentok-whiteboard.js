@@ -382,10 +382,12 @@ var OpenTokWhiteboard = angular.module('opentok-whiteboard', ['opentok'])
                         if (drawHistory.length > 0 && event.connection.connectionId !==
                                 OTSession.session.connection.connectionId) {
                             batchSignal('otWhiteboard_history', drawHistory, event.connection);
-                            // Iterate through redo stack to hide any paths which have been undone
-                            if (redoStack.length) {
-                                redoStack.forEach(function(id) {
-                                    sendUpdate('otWhiteboard_undo', id, event.connection);
+                            // Iterate through pathStack to hide any invisible paths
+                            if (pathStack.length) {
+                                pathStack.forEach(function(path) {
+                                    if (path.visible === false) {
+                                        sendUpdate('otWhiteboard_undo', path.id, event.connection);
+                                    }
                                 });
                             }
                         }
