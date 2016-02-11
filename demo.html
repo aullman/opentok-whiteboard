@@ -7,11 +7,12 @@
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <script src="bower_components/jquery/dist/jquery.min.js" type="text/javascript" charset="utf-8"></script>
         <script src="bower_components/angular/angular.min.js" type="text/javascript" charset="utf-8"></script>
+        <script src="bower_components/paper/dist/paper-core.min.js" type="text/javascript" charset="utf-8"></script>
         <script src="//static.opentok.com/webrtc/v2.2/js/TB.js" type="text/javascript" charset="utf-8"></script>
         <script src="bower_components/opentok-angular/opentok-angular.js" type="text/javascript" charset="utf-8"></script>
         <script src="opentok-whiteboard.js" type="text/javascript" charset="utf-8"></script>
         <link rel="stylesheet" href="opentok-whiteboard.css" type="text/css" media="screen" charset="utf-8">
-        
+
         <script type="text/javascript" charset="utf-8">
         angular.module('demo', ['opentok', 'opentok-whiteboard'])
         .controller('DemoCtrl', ['$scope', 'OTSession', function ($scope, OTSession) {
@@ -34,7 +35,7 @@
                 margin: 0;
                 padding: 0;
             }
-            
+
             ot-whiteboard {
                 display: block;
                 width: 100%;
