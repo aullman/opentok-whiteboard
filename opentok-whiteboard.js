@@ -246,6 +246,12 @@ var OpenTokWhiteboard = angular.module('opentok-whiteboard', ['opentok'])
                 }
             };
 
+            var requestHistory = function() {
+              OTSession.session.signal({
+                type: 'otWhiteboard_request_history'
+              });
+            };
+
             angular.element(document).on('keyup', function (event) {
                 if (event.ctrlKey) {
                     if (event.keyCode === 90)
@@ -360,7 +366,13 @@ var OpenTokWhiteboard = angular.module('opentok-whiteboard', ['opentok'])
             });
 
             if (OTSession.session) {
+                if (OTSession.session.isConnected()) {
+                  requestHistory();
+                }
                 OTSession.session.on({
+                    sessionConnected: function() {
+                      requestHistory();
+                    },
                     'signal:otWhiteboard_update': function (event) {
                         if (event.from.connectionId !== OTSession.session.connection.connectionId) {
                             drawUpdates(JSON.parse(event.data));
@@ -397,9 +409,8 @@ var OpenTokWhiteboard = angular.module('opentok-whiteboard', ['opentok'])
                             clearCanvas();
                         }
                     },
-                    connectionCreated: function (event) {
-                        if (drawHistory.length > 0 && event.connection.connectionId !==
-                                OTSession.session.connection.connectionId) {
+                    'signal:otWhiteboard_request_history': function (event) {
+                        if (drawHistory.length > 0) {
                             batchSignal('otWhiteboard_history', drawHistory, event.connection);
                         }
                     }
