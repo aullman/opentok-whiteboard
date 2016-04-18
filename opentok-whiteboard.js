@@ -1,6 +1,6 @@
 /*!
  *  opentok-whiteboard (http://github.com/aullman/opentok-whiteboard)
- *  
+ *
  *  Shared Whiteboard that works with OpenTok
  *
  *  @Author: Adam Ullman (http://github.com/aullman)
@@ -12,7 +12,7 @@ var OpenTokWhiteboard = angular.module('opentok-whiteboard', ['opentok'])
 .directive('otWhiteboard', ['OTSession', '$window', function (OTSession, $window) {
     return {
         restrict: 'E',
-        template: '<canvas></canvas>' + 
+        template: '<canvas></canvas>' +
 
             '<div class="OT_panel">' +
 
@@ -22,7 +22,7 @@ var OpenTokWhiteboard = angular.module('opentok-whiteboard', ['opentok'])
 
             '<input type="button" ng-click="erase()" ng-class="{OT_erase: true, OT_selected: erasing}"' +
             ' value="Eraser"></input>' +
-            
+
             '<input type="button" ng-click="capture()" class="OT_capture" value="{{captureText}}"></input>' +
 
             '<input type="button" ng-click="clear()" class="OT_clear" value="Clear"></input>',
@@ -50,7 +50,7 @@ var OpenTokWhiteboard = angular.module('opentok-whiteboard', ['opentok'])
 
             canvas.width = attrs.width || element.width();
             canvas.height = attrs.height || element.height();
-            
+
             var clearCanvas = function () {
                 ctx.save();
 
@@ -62,15 +62,15 @@ var OpenTokWhiteboard = angular.module('opentok-whiteboard', ['opentok'])
                 ctx.restore();
                 drawHistory = [];
             };
-            
+
             scope.changeColor = function (color) {
                 scope.color = color['background-color'];
                 scope.lineWidth = 2;
                 scope.erasing = false;
             };
-            
+
             scope.changeColor(scope.colors[Math.floor(Math.random() * scope.colors.length)]);
-            
+
             scope.clear = function () {
                 clearCanvas();
                 if (OTSession.session) {
@@ -79,13 +79,13 @@ var OpenTokWhiteboard = angular.module('opentok-whiteboard', ['opentok'])
                     });
                 }
             };
-            
+
             scope.erase = function () {
                 scope.color = element.css("background-color") || "#fff";
                 scope.lineWidth = 50;
                 scope.erasing = true;
             };
-            
+
             scope.capture = function () {
                 if (iOS) {
                     // On iOS you can put HTML in a mailto: link
@@ -110,16 +110,16 @@ var OpenTokWhiteboard = angular.module('opentok-whiteboard', ['opentok'])
                 ctx.lineTo(update.toX, update.toY);
                 ctx.stroke();
                 ctx.closePath();
-                
+
                 drawHistory.push(update);
             };
-            
+
             var drawUpdates = function (updates) {
                 updates.forEach(function (update) {
                     draw(update);
                 });
             };
-            
+
             var batchSignal = function (type, data, toConnection) {
                 // We send data in small chunks so that they fit in a signal
                 // Each packet is maximum ~250 chars, we can fit 8192/250 ~= 32 updates per signal
@@ -139,7 +139,7 @@ var OpenTokWhiteboard = angular.module('opentok-whiteboard', ['opentok'])
                     OTSession.session.signal(signal, signalError);
                 }
             };
-            
+
             var updateTimeout;
             var sendUpdate = function (update) {
                 if (OTSession.session) {
@@ -153,15 +153,21 @@ var OpenTokWhiteboard = angular.module('opentok-whiteboard', ['opentok'])
                     }
                 }
             };
-            
-            angular.element(canvas).on('mousedown mousemove mouseup mouseout touchstart touchmove touchend', 
+
+            var requestHistory = function() {
+              OTSession.session.signal({
+                type: 'otWhiteboard_request_history'
+              });
+            };
+
+            angular.element(canvas).on('mousedown mousemove mouseup mouseout touchstart touchmove touchend',
               function (event) {
                 if (event.type === 'mousemove' && !client.dragging) {
                     // Ignore mouse move Events if we're not dragging
                     return;
                 }
                 event.preventDefault();
-                
+
                 var offset = angular.element(canvas).offset(),
                     scaleX = canvas.width / element.width(),
                     scaleY = canvas.height / element.height(),
@@ -171,7 +177,7 @@ var OpenTokWhiteboard = angular.module('opentok-whiteboard', ['opentok'])
                        event.originalEvent.touches[0].pageY - offset.top,
                     x = offsetX * scaleX,
                     y = offsetY * scaleY;
-                
+
                 switch (event.type) {
                 case 'mousedown':
                 case 'touchstart':
@@ -204,9 +210,15 @@ var OpenTokWhiteboard = angular.module('opentok-whiteboard', ['opentok'])
                     client.dragging = false;
                 }
             });
-            
+
             if (OTSession.session) {
+                if (OTSession.session.isConnected()) {
+                  requestHistory();
+                }
                 OTSession.session.on({
+                    sessionConnected: function() {
+                      requestHistory();
+                    },
                     'signal:otWhiteboard_update': function (event) {
                         if (event.from.connectionId !== OTSession.session.connection.connectionId) {
                             drawUpdates(JSON.parse(event.data));
@@ -227,9 +239,8 @@ var OpenTokWhiteboard = angular.module('opentok-whiteboard', ['opentok'])
                             clearCanvas();
                         }
                     },
-                    connectionCreated: function (event) {
-                        if (drawHistory.length > 0 && event.connection.connectionId !==
-                                OTSession.session.connection.connectionId) {
+                    'signal:otWhiteboard_request_history': function (event) {
+                        if (drawHistory.length > 0) {
                             batchSignal('otWhiteboard_history', drawHistory, event.connection);
                         }
                     }
