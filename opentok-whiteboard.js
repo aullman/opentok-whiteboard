@@ -12,7 +12,7 @@ var OpenTokWhiteboard = angular.module('opentok-whiteboard', ['opentok'])
 .directive('otWhiteboard', ['OTSession', '$window', function (OTSession, $window) {
     return {
         restrict: 'E',
-        template: '<canvas></canvas>' +
+        template: '<canvas hidpi="off"></canvas>' +
 
             '<div class="OT_panel">' +
 
