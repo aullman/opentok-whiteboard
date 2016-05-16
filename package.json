@@ -1,6 +1,6 @@
 {
   "name": "opentok-whiteboard",
-  "version": "1.0.2",
+  "version": "1.1.0",
   "description": "Shared Whiteboard that works with OpenTok",
   "main": "opentok-whiteboard.js",
   "dependencies": {
