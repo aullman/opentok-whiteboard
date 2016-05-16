@@ -8,7 +8,19 @@
  *  @License: Released under the MIT license (http://opensource.org/licenses/MIT)
 **/
 
-var OpenTokWhiteboard = angular.module('opentok-whiteboard', ['opentok'])
+var ng, p;
+if (typeof angular === 'undefined' && typeof require !== 'undefined') {
+  ng = require('angular');
+} else {
+  ng = angular;
+}
+if (typeof paper === 'undefined' && typeof require !== 'undefined') {
+  p = require('paper');
+} else {
+  p = paper;
+}
+
+var OpenTokWhiteboard = ng.module('opentok-whiteboard', ['opentok'])
 .directive('otWhiteboard', ['OTSession', '$window', function (OTSession, $window) {
     return {
         restrict: 'E',
@@ -48,15 +60,15 @@ var OpenTokWhiteboard = angular.module('opentok-whiteboard', ['opentok'])
                 iOS = /(iPad|iPhone|iPod)/g.test( navigator.userAgent );
 
             // Create an empty project and a view for the canvas
-            $window.paper.setup(canvas);
+            p.setup(canvas);
 
             // Set canvas size
             canvas.width = attrs.width || element.width();
             canvas.height = attrs.height || element.height();
 
             // Set paper.js view size
-            $window.paper.view.viewSize = new $window.paper.Size(canvas.width, canvas.height);
-            $window.paper.view.draw();
+            p.view.viewSize = new p.Size(canvas.width, canvas.height);
+            p.view.draw();
 
             scope.colors = [{'background-color': 'black'},
                             {'background-color': 'blue'},
@@ -72,8 +84,8 @@ var OpenTokWhiteboard = angular.module('opentok-whiteboard', ['opentok'])
             scope.lineWidth = 2;
 
             var clearCanvas = function () {
-                $window.paper.project.clear();
-                $window.paper.view.update();
+                p.project.clear();
+                p.view.update();
                 drawHistory = [];
                 pathStack = [];
                 undoStack = [];
@@ -124,7 +136,7 @@ var OpenTokWhiteboard = angular.module('opentok-whiteboard', ['opentok'])
                 pathStack.forEach(function(path) {
                     if (path.uuid === uuid) {
                         path.visible = false;
-                        $window.paper.view.update();
+                        p.view.update();
                     }
                 });
                 drawHistory.forEach(function(update) {
@@ -147,7 +159,7 @@ var OpenTokWhiteboard = angular.module('opentok-whiteboard', ['opentok'])
                 pathStack.forEach(function(path) {
                     if (path.uuid === uuid) {
                         path.visible = true;
-                        $window.paper.view.update();
+                        p.view.update();
                     }
                 });
                 drawHistory.forEach(function(update) {
@@ -162,7 +174,7 @@ var OpenTokWhiteboard = angular.module('opentok-whiteboard', ['opentok'])
 
                 switch (update.event) {
                     case 'start':
-                        var path = new $window.paper.Path();
+                        var path = new p.Path();
 
                         path.selected = false;
                         path.strokeColor = update.color;
@@ -176,13 +188,13 @@ var OpenTokWhiteboard = angular.module('opentok-whiteboard', ['opentok'])
                             path.strokeWidth = 50;
                         }
 
-                        if (angular.isDefined(update.visible)) {
+                        if (ng.isDefined(update.visible)) {
                           path.visible = update.visible;
                         }
 
-                        var start = new $window.paper.Point(update.fromX, update.fromY);
+                        var start = new p.Point(update.fromX, update.fromY);
                         path.moveTo(start);
-                        $window.paper.view.draw();
+                        p.view.draw();
 
                         pathStack.push(path);
                         break;
@@ -190,7 +202,7 @@ var OpenTokWhiteboard = angular.module('opentok-whiteboard', ['opentok'])
                         pathStack.forEach(function(path) {
                             if (path.uuid === update.uuid) {
                                 path.add(update.toX, update.toY);
-                                $window.paper.view.draw();
+                                p.view.draw();
                             }
                         });
                         break;
@@ -199,7 +211,7 @@ var OpenTokWhiteboard = angular.module('opentok-whiteboard', ['opentok'])
                             if (path.uuid === update.uuid) {
                                 undoStack.push(path.uuid);
                                 path.simplify();
-                                $window.paper.view.draw();
+                                p.view.draw();
                             }
                         });
                         break;
@@ -252,7 +264,7 @@ var OpenTokWhiteboard = angular.module('opentok-whiteboard', ['opentok'])
               });
             };
 
-            angular.element(document).on('keyup', function (event) {
+            ng.element(document).on('keyup', function (event) {
                 if (event.ctrlKey) {
                     if (event.keyCode === 90)
                         scope.undo();
@@ -268,7 +280,7 @@ var OpenTokWhiteboard = angular.module('opentok-whiteboard', ['opentok'])
              *
              */
 
-            angular.element(canvas).on('mousedown mousemove mouseup mouseout touchstart touchmove touchend touchcancel',
+            ng.element(canvas).on('mousedown mousemove mouseup mouseout touchstart touchmove touchend touchcancel',
 
               function (event) {
                 if ((event.type === 'mousemove' || event.type === 'touchmove' || event.type === 'mouseout') && !client.dragging) {
@@ -278,7 +290,7 @@ var OpenTokWhiteboard = angular.module('opentok-whiteboard', ['opentok'])
 
                 event.preventDefault();
 
-                var offset = angular.element(canvas).offset(),
+                var offset = ng.element(canvas).offset(),
                     scaleX = canvas.width / element.width(),
                     scaleY = canvas.height / element.height(),
                     offsetX = event.offsetX || event.originalEvent.pageX - offset.left ||
