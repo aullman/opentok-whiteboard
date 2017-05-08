@@ -423,7 +423,7 @@ var OpenTokWhiteboard = ng.module('opentok-whiteboard', ['opentok'])
                     },
                     'signal:otWhiteboard_request_history': function (event) {
                         if (drawHistory.length > 0) {
-                            batchSignal('otWhiteboard_history', drawHistory, event.connection);
+                            batchSignal('otWhiteboard_history', drawHistory, event.from);
                         }
                     }
                 });
