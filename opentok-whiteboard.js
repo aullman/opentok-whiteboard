@@ -35,7 +35,7 @@ var OpenTokWhiteboard = ng.module('opentok-whiteboard', ['opentok'])
             '<input type="button" ng-click="erase()" ng-class="{OT_erase: true, OT_selected: erasing}"' +
             ' value="Eraser"></input>' +
 
-            '<input type="button" ng-click="capture()" class="OT_capture" value="{{captureText}}"></input>' +
+            '<a id="ot_whiteboard" ng-click="capture()" ><input type="button" class="OT_capture" value="{{captureText}}"></input></a>' +
 
             '<input type="button" ng-click="undo()" class="OT_capture" value="Undo"></input>' +
 
@@ -118,8 +118,10 @@ var OpenTokWhiteboard = ng.module('opentok-whiteboard', ['opentok'])
                     // On iOS you can put HTML in a mailto: link
                     $window.location.href = "mailto:?subject=Whiteboard&Body=<img src='" + canvas.toDataURL('image/png') + "'>";
                 } else {
-                    // We just open the image in a new window
-                    $window.open(canvas.toDataURL('image/png'));
+                    // We just download the canvas
+                    var link = document.getElementById('ot_whiteboard');
+                    link.href = canvas.toDataURL('image/png');
+                    link.download = 'whiteboard_capture.png';
                 }
             };
 
