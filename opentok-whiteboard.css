@@ -16,19 +16,24 @@ ot-whiteboard div.OT_panel {
     right: 0;
 }
 
-ot-whiteboard div.OT_panel input {
+ot-whiteboard div.OT_panel input,
+ot-whiteboard div.OT_panel .OT_capture {
     display: block;
     -webkit-appearance: none;
     border: none;
     outline: none;
     margin-top: 2px;
     font-size: 9px;
+    font-family: sans-serif;
+    cursor: pointer;
 }
 
 ot-whiteboard div.OT_panel input.OT_clear,
-ot-whiteboard div.OT_panel input.OT_capture {
+ot-whiteboard div.OT_panel .OT_capture {
+    text-decoration: none;
     width: 40px;
     height: 40px;
+    line-height: 40px;
     color: #fff;
     background-color: #7D7D7D;
     border-radius: 5px;
